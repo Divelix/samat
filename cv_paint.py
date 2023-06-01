@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class PaintApp:
     def __init__(self, background_image_path: str):
         self.drawing = False
@@ -20,8 +21,8 @@ class PaintApp:
         # Create a blank canvas with an alpha channel
         self.canvas = np.zeros((500, 500, 4), dtype=np.uint8)
 
-        cv2.namedWindow('Paint', cv2.WINDOW_GUI_NORMAL)
-        cv2.setMouseCallback('Paint', self.draw_shape)
+        cv2.namedWindow("Paint", cv2.WINDOW_GUI_NORMAL)
+        cv2.setMouseCallback("Paint", self.draw_shape)
 
     def draw_shape(self, event, x, y, flags, param):
         if event == cv2.EVENT_RBUTTONDOWN:
@@ -63,31 +64,31 @@ class PaintApp:
             # Apply alpha blending to combine the canvas and the background image
             alpha = canvas_resized[:, :, 3] / 255.0
             alpha = np.expand_dims(alpha, axis=-1)
-            blended = cv2.convertScaleAbs(canvas_resized[:, :, :3] * alpha +
-                                          display[:, :, :3] * (1 - alpha))
+            blended = cv2.convertScaleAbs(canvas_resized[:, :, :3] * alpha + display[:, :, :3] * (1 - alpha))
 
             # Update the display with the blended image
             display[:, :, :3] = blended
 
             x, y = self.mouse_position
             cv2.circle(display, (x, y), self.brush_size, (128, 128, 128, 255), 1)
-            cv2.imshow('Paint', display)
+            cv2.imshow("Paint", display)
 
             key = cv2.waitKey(1) & 0xFF
 
-            if key == ord('m'):
+            if key == ord("m"):
                 self.mode = not self.mode
-            elif key == ord('='):
+            elif key == ord("="):
                 self.brush_size += 1
-            elif key == ord('-'):
+            elif key == ord("-"):
                 self.brush_size = max(1, self.brush_size - 1)
-            elif key == ord('c'):
+            elif key == ord("c"):
                 self.erase_mode = not self.erase_mode
             elif key == 27:
                 break
 
         cv2.destroyAllWindows()
 
-if __name__ == '__main__':
-    app = PaintApp('/home/denis/Pictures/Screenshot from 2023-04-26 14-05-45.png')
+
+if __name__ == "__main__":
+    app = PaintApp("/home/divelix/Pictures/IMG_20230415_183701.jpg")
     app.run()
