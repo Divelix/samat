@@ -6,19 +6,12 @@ from PyQt5.QtGui import (
     QPixmap,
     QPainterPath,
     QMouseEvent,
-    QPainter,
-    QPen,
 )
 from PyQt5.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QFileDialog,
     QSizePolicy,
-    QGraphicsItem,
-    QGraphicsEllipseItem,
-    QGraphicsRectItem,
-    QGraphicsLineItem,
-    QGraphicsPolygonItem,
 )
 import numpy as np
 
