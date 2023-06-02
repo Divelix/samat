@@ -3,7 +3,7 @@ from PyQt5 import QtGui
 
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QWidget, QFrame
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QPointF, QEvent
-from PyQt5.QtGui import QBrush, QColor, QPixmap, QMouseEvent
+from PyQt5.QtGui import QBrush, QColor, QPixmap, QMouseEvent, QResizeEvent
 
 
 class GraphicsView(QGraphicsView):
@@ -15,6 +15,7 @@ class GraphicsView(QGraphicsView):
 
     def __init__(self, parent: Optional[QWidget]) -> None:
         super().__init__(parent)
+        self._zoom_limits = (0, 30)
         self.panBtn = Qt.MouseButton.RightButton
         self.resetZoomBtn = Qt.Key.Key_Space
         self._zoom = 0
@@ -30,39 +31,32 @@ class GraphicsView(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.Shape.NoFrame)  # removes white widget outline
 
-    def hasPhoto(self):
-        return not self._empty
-
     def reset_zoom(self):
         self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self._zoom = 0
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self.reset_zoom()
+        return super().resizeEvent(event)
 
     def setPhoto(self, pixmap=None):
-        self._zoom = 0
-        if pixmap and not pixmap.isNull():
-            self._empty = False
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            self._image.setPixmap(pixmap)
-        else:
-            self._empty = True
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-            self._image.setPixmap(QPixmap())
-        self.reset_zoom()
+        self._empty = False
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._image.setPixmap(pixmap)
 
     def wheelEvent(self, event):
-        if self.hasPhoto():
-            if event.angleDelta().y() > 0:
+        factor = 1
+        if event.angleDelta().y() > 0:
+            # zoom in
+            if self._zoom < self._zoom_limits[1]:
                 factor = 1.25
                 self._zoom += 1
-            else:
+        else:
+            # zoom out
+            if self._zoom > self._zoom_limits[0]:
                 factor = 0.8
                 self._zoom -= 1
-
-            if self._zoom > 0:
-                self.scale(factor, factor)
-            elif self._zoom == 0:
-                self.reset_zoom()
-            else:
-                self._zoom = 0
+        self.scale(factor, factor)
 
     def toggleDragMode(self):
         if self.dragMode() == QGraphicsView.DragMode.ScrollHandDrag:
@@ -71,9 +65,6 @@ class GraphicsView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mousePressEvent(self, event):
-        # if self._image.isUnderMouse():
-        #     self.imageClicked.emit(self.mapToScene(event.pos()).toPoint())
-
         # Ignore dummy events. e.g., Faking pan with left button ScrollHandDrag.
         dummyModifiers = Qt.KeyboardModifier(
             Qt.KeyboardModifier.ShiftModifier
@@ -162,4 +153,6 @@ class GraphicsView(QGraphicsView):
     def keyPressEvent(self, event) -> None:
         if event.key() == self.resetZoomBtn:
             self.reset_zoom()
+        elif event.key() == Qt.Key.Key_P:
+            print(self._zoom)
         return super().keyPressEvent(event)
