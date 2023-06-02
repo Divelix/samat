@@ -12,6 +12,7 @@ class AnnotationLayer(QGraphicsRectItem):
         self.pen_color = QColor(0, 0, 0)
         self.pen_thickness = 50
         self.factor = 3
+        self.brushBtn = Qt.MouseButton.LeftButton
 
         self.brush_pixmap = QPixmap("brush.png")
         cursor_size = self.pen_thickness // self.factor
@@ -39,17 +40,19 @@ class AnnotationLayer(QGraphicsRectItem):
         painter.restore()
 
     def mousePressEvent(self, event):
-        self.m_line_draw.setP1(event.pos())
-        self.m_line_draw.setP2(event.pos())
+        if event.button() == self.brushBtn:
+            self.m_line_draw.setP1(event.pos())
+            self.m_line_draw.setP2(event.pos())
         super().mousePressEvent(event)
         event.accept()
 
     def mouseMoveEvent(self, event):
-        self.m_line_draw.setP2(event.pos())
-        pen = QPen(self.pen_color, self.pen_thickness)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self._draw_line(self.m_line_draw, pen, self.current_state)
-        self.m_line_draw.setP1(event.pos())
+        if event.buttons() == self.brushBtn:
+            self.m_line_draw.setP2(event.pos())
+            pen = QPen(self.pen_color, self.pen_thickness)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            self._draw_line(self.m_line_draw, pen, self.current_state)
+            self.m_line_draw.setP1(event.pos())
         super().mouseMoveEvent(event)
 
     def _draw_line(self, line, pen, state: int):

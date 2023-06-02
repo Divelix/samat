@@ -21,6 +21,8 @@ class GraphicsView(QGraphicsView):
         self.panBtn = Qt.MouseButton.RightButton
         self.brushBtn = Qt.MouseButton.LeftButton
         self.resetZoomBtn = Qt.Key.Key_Space
+        self.resetAnnoBtn = Qt.Key.Key_R
+        self.last_mouse_pos = QPoint()
         self._zoom = 0
         self._empty = True
         scene = QGraphicsScene(self)
@@ -64,97 +66,25 @@ class GraphicsView(QGraphicsView):
                 self._zoom -= 1
         self.scale(factor, factor)
 
-    def toggleDragMode(self):
-        if self.dragMode() == QGraphicsView.DragMode.ScrollHandDrag:
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        elif not self._image_layer.pixmap().isNull():
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-
     def mousePressEvent(self, event):
-        # Ignore dummy events. e.g., Faking pan with left button ScrollHandDrag.
-        dummyModifiers = Qt.KeyboardModifier(
-            Qt.KeyboardModifier.ShiftModifier
-            | Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.AltModifier
-            | Qt.KeyboardModifier.MetaModifier
-        )
-        if event.modifiers() == dummyModifiers:
-            QGraphicsView.mousePressEvent(self, event)
-            event.accept()
-            return
+        if event.button() == self.panBtn:
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.last_mouse_pos = event.pos()
+        super().mousePressEvent(event)
 
-        # Start dragging to pan?
-        if (self.panBtn is not None) and (event.button() == self.panBtn):
-            self._pixelPosition = event.pos()  # store pixel position
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            if self.panBtn == Qt.MouseButton.LeftButton:
-                QGraphicsView.mousePressEvent(self, event)
-            else:
-                # ScrollHandDrag ONLY works with LeftButton, so fake it.
-                # Use a bunch of dummy modifiers to notify that event should NOT be handled as usual.
-                self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
-                dummyModifiers = Qt.KeyboardModifier(
-                    Qt.KeyboardModifier.ShiftModifier
-                    | Qt.KeyboardModifier.ControlModifier
-                    | Qt.KeyboardModifier.AltModifier
-                    | Qt.KeyboardModifier.MetaModifier
-                )
-                dummyEvent = QMouseEvent(
-                    QEvent.Type.MouseButtonPress,
-                    QPointF(event.pos()),
-                    Qt.MouseButton.LeftButton,
-                    event.buttons(),
-                    dummyModifiers,
-                )
-                self.mousePressEvent(dummyEvent)
-            sceneViewport = self.mapToScene(self.viewport().rect()).boundingRect().intersected(self.sceneRect())
-            self._scenePosition = sceneViewport.topLeft()
-            event.accept()
-            self._isPanning = True
-            return
-        QGraphicsView.mousePressEvent(self, event)
+    def mouseMoveEvent(self, event):
+        if event.buttons() == self.panBtn:
+            delta = event.pos() - self.last_mouse_pos
+            self.last_mouse_pos = event.pos()
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         """Stop mouse pan or zoom mode (apply zoom if valid)."""
-        # Ignore dummy events. e.g., Faking pan with left button ScrollHandDrag.
-        dummyModifiers = Qt.KeyboardModifier(
-            Qt.KeyboardModifier.ShiftModifier
-            | Qt.KeyboardModifier.ControlModifier
-            | Qt.KeyboardModifier.AltModifier
-            | Qt.KeyboardModifier.MetaModifier
-        )
-        if event.modifiers() == dummyModifiers:
-            QGraphicsView.mouseReleaseEvent(self, event)
-            event.accept()
-            return
-
-        # Finish panning?
-        if (self.panBtn is not None) and (event.button() == self.panBtn):
-            if self.panBtn == Qt.MouseButton.LeftButton:
-                QGraphicsView.mouseReleaseEvent(self, event)
-            else:
-                # ScrollHandDrag ONLY works with LeftButton, so fake it.
-                # Use a bunch of dummy modifiers to notify that event should NOT be handled as usual.
-                self.viewport().setCursor(Qt.CursorShape.ArrowCursor)
-                dummyModifiers = Qt.KeyboardModifier(
-                    Qt.KeyboardModifier.ShiftModifier
-                    | Qt.KeyboardModifier.ControlModifier
-                    | Qt.KeyboardModifier.AltModifier
-                    | Qt.KeyboardModifier.MetaModifier
-                )
-                dummyEvent = QMouseEvent(
-                    QEvent.Type.MouseButtonRelease,
-                    QPointF(event.pos()),
-                    Qt.MouseButton.LeftButton,
-                    event.buttons(),
-                    dummyModifiers,
-                )
-                self.mouseReleaseEvent(dummyEvent)
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-            event.accept()
-            self._isPanning = False
-            return
-        QGraphicsView.mouseReleaseEvent(self, event)
+        if event.button() == self.panBtn:
+            self.setDragMode(QGraphicsView.NoDrag)
+        super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event) -> None:
         if event.key() == self.resetZoomBtn:
@@ -165,7 +95,7 @@ class GraphicsView(QGraphicsView):
             self._annotation_layer.change_brush_size(-5)
         elif event.key() == Qt.Key.Key_BracketRight:
             self._annotation_layer.change_brush_size(5)
-        elif event.key() == Qt.Key.Key_R:
+        elif event.key() == self.resetAnnoBtn:
             self._annotation_layer.reset()  # clear annotation layer
 
         return super().keyPressEvent(event)
