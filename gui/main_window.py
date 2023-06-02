@@ -15,4 +15,4 @@ class MainWindow(QMainWindow):
         self.resize(1920, 1080)
 
     def loadImage(self, file_path: str):
-        self.graphics_view.setPhoto(QPixmap(file_path))
+        self.graphics_view.set_image(QPixmap(file_path))
