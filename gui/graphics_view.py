@@ -21,8 +21,6 @@ class GraphicsView(QGraphicsView):
         super().__init__(parent)
         self.panBtn = Qt.MouseButton.RightButton
         self.brushBtn = Qt.MouseButton.LeftButton
-        self.resetZoomBtn = Qt.Key.Key_Space
-        self.resetAnnoBtn = Qt.Key.Key_R
         self._zoom_limits = (0, 30)
         self._pen_color = QColor(0, 0, 0)
         self._pen_thickness = 50
@@ -34,7 +32,8 @@ class GraphicsView(QGraphicsView):
         scene = QGraphicsScene(self)
         self._image_layer = QGraphicsPixmapItem()
         self._annotation_layer = AnnotationLayer(self._image_layer, self.brushBtn)
-        self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
+        self._annotation_layer.set_pen_color(self._pen_color)
+        self._annotation_layer.set_pen_thickness(self._pen_thickness)
         scene.addItem(self._image_layer)
         self.setScene(scene)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -114,30 +113,18 @@ class GraphicsView(QGraphicsView):
             QPen(self._pen_color, 2, Qt.PenStyle.SolidLine),
         )
 
-    def keyPressEvent(self, event) -> None:
-        if event.key() == self.resetZoomBtn:
-            self.reset_zoom()
-        elif event.key() == Qt.Key.Key_P:
-            print(self._zoom)
-        elif event.key() == Qt.Key.Key_BracketLeft:
-            self._pen_thickness -= 5
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == Qt.Key.Key_BracketRight:
-            self._pen_thickness += 5
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == Qt.Key.Key_0:
-            self._pen_color = QColor(0, 0, 0)
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == Qt.Key.Key_1:
-            self._pen_color = QColor(255, 0, 0)
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == Qt.Key.Key_2:
-            self._pen_color = QColor(0, 255, 0)
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == Qt.Key.Key_3:
-            self._pen_color = QColor(0, 0, 255)
-            self._annotation_layer.update_pen(self._pen_color, self._pen_thickness)
-        elif event.key() == self.resetAnnoBtn:
-            self._annotation_layer.reset()  # clear annotation layer
+    def update_brush(self, value: QColor | int):
+        if type(value) == QColor:
+            self._pen_color = value
+            self._annotation_layer.set_pen_color(self._pen_color)
+        elif type(value) == int:
+            self._pen_thickness += value
+            self._annotation_layer.set_pen_thickness(self._pen_thickness)
+        else:
+            raise TypeError(f"QColor or int alowed, but {type(value)} was given")
 
-        return super().keyPressEvent(event)
+    def clear_label(self):
+        self._annotation_layer.reset()
+
+    def save_label(self):
+        self._annotation_layer.save("out.png")

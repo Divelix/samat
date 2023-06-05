@@ -1,7 +1,7 @@
 from typing import Optional
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget
 from PyQt5.QtGui import QPainter, QPixmap, QPen, QColor
-from PyQt5.QtCore import Qt, QLineF, QRectF, QPoint
+from PyQt5.QtCore import Qt, QLineF, QRectF, QPoint, QFile
 
 
 class AnnotationLayer(QGraphicsRectItem):
@@ -59,6 +59,14 @@ class AnnotationLayer(QGraphicsRectItem):
         painter.end()
         self.update()
 
-    def update_pen(self, pen_color, pen_thickness):
-        self._pen_color = pen_color
-        self._pen_thickness = pen_thickness
+    def set_pen_color(self, color: QColor):
+        self._pen_color = color
+
+    def set_pen_thickness(self, thickness: int):
+        self._pen_thickness = thickness
+
+    def save(self, name: str):
+        self.m_pixmap.save(name)
+
+    def load(self, name: str):
+        self.m_pixmap.load(name)

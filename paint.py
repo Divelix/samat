@@ -168,7 +168,9 @@ class MainWindow(QMainWindow):
             # valueChanged=self.onThicknessChanged,
         )
 
-        self.eraser_checkbox = QCheckBox(self.tr("Eraser"), stateChanged=self.onStateChanged)
+        self.eraser_checkbox = QCheckBox(
+            self.tr("Eraser"), stateChanged=self.onStateChanged
+        )
 
         self.view = GraphicsView()
         # self.view.foreground_item.pen_thickness = self.pen_slider.value()
@@ -191,15 +193,17 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         lay = QHBoxLayout(central_widget)
-        lay.addLayout(vlay, stretch=0)
         lay.addWidget(self.view, stretch=1)
+        lay.addLayout(vlay, stretch=0)
 
         self.resize(1920, 1080)
 
     @pyqtSlot(int)
     def onStateChanged(self, state):
         self.view.foreground_item.current_state = (
-            AnnotationLayer.EraseState if state == Qt.Checked else AnnotationLayer.DrawState
+            AnnotationLayer.EraseState
+            if state == Qt.Checked
+            else AnnotationLayer.DrawState
         )
 
     # @QtCore.pyqtSlot(int)
@@ -222,7 +226,9 @@ class MainWindow(QMainWindow):
         if filename:
             pixmap = QPixmap(filename)
             if pixmap.isNull():
-                QMessageBox.information(self, "Image Viewer", "Cannot load %s." % filename)
+                QMessageBox.information(
+                    self, "Image Viewer", "Cannot load %s." % filename
+                )
                 return
             self.view.set_image(pixmap)
 
