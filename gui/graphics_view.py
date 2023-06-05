@@ -61,8 +61,8 @@ class GraphicsView(QGraphicsView):
         self.reset_zoom()
         return super().resizeEvent(event)
 
-    def set_sample(self, image_path: Path, label_path: Path):
-        print(f"set_sample():\n image: {image_path}\nlabel: {label_path}")
+    def load_sample(self, image_path: Path, label_path: Path):
+        print(f"load {image_path.stem} sample")
         self._empty = False
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self._image_layer.setPixmap(QPixmap(str(image_path)))
@@ -138,5 +138,5 @@ class GraphicsView(QGraphicsView):
     def clear_label(self):
         self._annotation_layer.clear()
 
-    def save_label(self):
-        self._annotation_layer.save("out.png")
+    def save_label(self, out_path):
+        self._annotation_layer.save(str(out_path))

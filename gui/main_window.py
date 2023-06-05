@@ -34,6 +34,8 @@ class MainWindow(QMainWindow):
     def switch_sample_by(self, step: int):
         if step == 0:
             return
+        curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
+        self._graphics_view.save_label(curr_label_path)
         max_id = len(self._image_stems) - 1
         corner_case_id = 0 if step < 0 else max_id
         new_id = self._curr_id + step
@@ -42,7 +44,7 @@ class MainWindow(QMainWindow):
         self._curr_id = new_id
         image_path = self._image_dir / new_name
         label_path = self._label_dir / new_name
-        self._graphics_view.set_sample(image_path, label_path)
+        self._graphics_view.load_sample(image_path, label_path)
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         if a0.key() == self.resetZoomBtn:
