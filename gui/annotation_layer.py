@@ -1,24 +1,19 @@
-from PyQt5.QtWidgets import QGraphicsRectItem
-from PyQt5.QtGui import QPainter, QPixmap, QCursor, QPen, QColor
-from PyQt5.QtCore import Qt, pyqtSlot, QLineF, QRectF, QPoint
+from typing import Optional
+from PyQt5.QtWidgets import QGraphicsRectItem, QWidget
+from PyQt5.QtGui import QPainter, QPixmap, QPen, QColor
+from PyQt5.QtCore import Qt, QLineF, QRectF, QPoint
 
 
 class AnnotationLayer(QGraphicsRectItem):
     DrawState, EraseState = range(2)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget], brushBtn) -> None:
         super().__init__(parent)
-        self.setOpacity(0.5)
-        self.pen_color = QColor(0, 0, 0)
-        self.pen_thickness = 50
-        self.factor = 3
-        self.brushBtn = Qt.MouseButton.LeftButton
+        self.brushBtn = brushBtn
+        self._pen_color = None
+        self._pen_thickness = None
 
-        self.brush_pixmap = QPixmap("brush.png")
-        cursor_size = self.pen_thickness // self.factor
-        pixmap = self.brush_pixmap.scaled(cursor_size, cursor_size)
-        cursor = QCursor(pixmap)
-        self.setCursor(cursor)
+        self.setOpacity(0.5)
 
         self.current_state = AnnotationLayer.DrawState
         self.setPen(QPen(Qt.PenStyle.NoPen))
@@ -31,7 +26,7 @@ class AnnotationLayer(QGraphicsRectItem):
         r = self.parentItem().pixmap().rect()
         self.setRect(QRectF(r))
         self.m_pixmap = QPixmap(r.size())
-        self.m_pixmap.fill(Qt.transparent)
+        self.m_pixmap.fill(Qt.GlobalColor.transparent)
 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
@@ -49,7 +44,7 @@ class AnnotationLayer(QGraphicsRectItem):
     def mouseMoveEvent(self, event):
         if event.buttons() == self.brushBtn:
             self.m_line_draw.setP2(event.pos())
-            pen = QPen(self.pen_color, self.pen_thickness)
+            pen = QPen(self._pen_color, self._pen_thickness)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             self._draw_line(self.m_line_draw, pen, self.current_state)
             self.m_line_draw.setP1(event.pos())
@@ -58,15 +53,12 @@ class AnnotationLayer(QGraphicsRectItem):
     def _draw_line(self, line, pen, state: int):
         painter = QPainter(self.m_pixmap)
         if state == AnnotationLayer.EraseState:
-            painter.setCompositionMode(QPainter.CompositionMode_Clear)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
         painter.setPen(pen)
         painter.drawLine(line)
         painter.end()
         self.update()
 
-    def change_brush_size(self, step: int):
-        self.pen_thickness += step
-        cursor_size = self.pen_thickness // self.factor
-        pixmap = self.brush_pixmap.scaled(cursor_size, cursor_size)
-        cursor = QCursor(pixmap)
-        self.setCursor(cursor)
+    def update_pen(self, pen_color, pen_thickness):
+        self._pen_color = pen_color
+        self._pen_thickness = pen_thickness
