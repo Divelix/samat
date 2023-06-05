@@ -1,5 +1,5 @@
+from pathlib import Path
 from typing import Optional
-from PyQt5.QtGui import QPen
 
 from PyQt5.QtWidgets import (
     QGraphicsView,
@@ -9,7 +9,15 @@ from PyQt5.QtWidgets import (
     QFrame,
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QPointF, QEvent
-from PyQt5.QtGui import QBrush, QColor, QPixmap, QMouseEvent, QResizeEvent, QPainter
+from PyQt5.QtGui import (
+    QBrush,
+    QColor,
+    QPixmap,
+    QMouseEvent,
+    QResizeEvent,
+    QPainter,
+    QPen,
+)
 
 from .annotation_layer import AnnotationLayer
 
@@ -53,11 +61,15 @@ class GraphicsView(QGraphicsView):
         self.reset_zoom()
         return super().resizeEvent(event)
 
-    def set_image(self, pixmap=None):
+    def set_sample(self, image_path: Path, label_path: Path):
+        print(f"set_sample():\n image: {image_path}\nlabel: {label_path}")
         self._empty = False
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self._image_layer.setPixmap(pixmap)
-        self._annotation_layer.reset()  # TODO: romove for annotation propagation
+        self._image_layer.setPixmap(QPixmap(str(image_path)))
+        if label_path.exists():
+            self._annotation_layer.set_image(str(label_path))
+        else:
+            self._annotation_layer.clear()
 
     def wheelEvent(self, event):
         factor = 1
@@ -73,13 +85,13 @@ class GraphicsView(QGraphicsView):
                 self._zoom -= 1
         self.scale(factor, factor)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
         if event.button() == self.panBtn:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
             self.last_mouse_pos = event.pos()
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent):
         mouse_pos = self.mapToScene(event.pos())
         self.drawCircleCursor(mouse_pos)
 
@@ -94,7 +106,7 @@ class GraphicsView(QGraphicsView):
             )
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent):
         """Stop mouse pan or zoom mode (apply zoom if valid)."""
         if event.button() == self.panBtn:
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -124,7 +136,7 @@ class GraphicsView(QGraphicsView):
             raise TypeError(f"QColor or int alowed, but {type(value)} was given")
 
     def clear_label(self):
-        self._annotation_layer.reset()
+        self._annotation_layer.clear()
 
     def save_label(self):
         self._annotation_layer.save("out.png")

@@ -22,7 +22,10 @@ class AnnotationLayer(QGraphicsRectItem):
         self.m_line_draw = QLineF()
         self.m_pixmap = QPixmap()
 
-    def reset(self):
+    def set_image(self, path: str):
+        self.m_pixmap = QPixmap(path)
+
+    def clear(self):
         r = self.parentItem().pixmap().rect()
         self.setRect(QRectF(r))
         self.m_pixmap = QPixmap(r.size())
