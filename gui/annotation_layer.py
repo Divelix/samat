@@ -7,11 +7,11 @@ from PyQt5.QtCore import Qt, QLineF, QRectF, QPoint, QFile
 class AnnotationLayer(QGraphicsRectItem):
     DrawState, EraseState = range(2)
 
-    def __init__(self, parent: Optional[QWidget], brushBtn) -> None:
+    def __init__(self, parent: Optional[QWidget], init_brush_size) -> None:
         super().__init__(parent)
-        self.brushBtn = brushBtn
-        self._pen_color = None
-        self._pen_thickness = None
+        self._brushBtn = Qt.MouseButton.LeftButton
+        self._brush_color = Qt.GlobalColor.black
+        self._brush_size = init_brush_size
 
         self.setOpacity(0.5)
 
@@ -38,16 +38,17 @@ class AnnotationLayer(QGraphicsRectItem):
         painter.restore()
 
     def mousePressEvent(self, event):
-        if event.button() == self.brushBtn:
+        if event.button() == self._brushBtn:
             self.m_line_draw.setP1(event.pos())
             self.m_line_draw.setP2(event.pos())
         super().mousePressEvent(event)
         event.accept()
 
     def mouseMoveEvent(self, event):
-        if event.buttons() == self.brushBtn:
+        print("aaaaaaa")
+        if event.buttons() == self._brushBtn:
             self.m_line_draw.setP2(event.pos())
-            pen = QPen(self._pen_color, self._pen_thickness)
+            pen = QPen(self._brush_color, self._brush_size)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             self._draw_line(self.m_line_draw, pen, self.current_state)
             self.m_line_draw.setP1(event.pos())
@@ -63,10 +64,10 @@ class AnnotationLayer(QGraphicsRectItem):
         self.update()
 
     def set_pen_color(self, color: QColor):
-        self._pen_color = color
+        self._brush_color = color
 
-    def set_pen_thickness(self, thickness: int):
-        self._pen_thickness = thickness
+    def change_pen_size_by(self, value: int):
+        self._brush_size += value
 
     def save(self, name: str):
         self.m_pixmap.save(name)
