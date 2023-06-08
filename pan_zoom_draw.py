@@ -75,22 +75,22 @@ class LabelLayer(QGraphicsRectItem):
         self.setOpacity(0.5)
         self._brush_color = QColor(0, 0, 0)
         self._brush_size = 50
-        self._pen = QPen(self._brush_color, self._brush_size)
-        self._pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         self.setPen(QPen(Qt.PenStyle.NoPen))
         self._pixmap = QPixmap()
         self.line = QLineF()
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
-    def paint(self, painter, option, widget=None):
-        super().paint(painter, option, widget)
-        painter.save()
-        painter.drawPixmap(QPoint(), self._pixmap)
-        painter.restore()
+    def set_brush_color(self, color: QColor):
+        self._brush_color = color
+
+    def change_brush_size_by(self, size: int):
+        self._brush_size += size
 
     def draw_line(self):
         painter = QPainter(self._pixmap)
-        painter.setPen(self._pen)
+        pen = QPen(self._brush_color, self._brush_size)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
         painter.drawLine(self.line)
         painter.end()
         self.update()
@@ -100,6 +100,12 @@ class LabelLayer(QGraphicsRectItem):
         self.setRect(QRectF(r))
         self._pixmap = QPixmap(r.size())
         self._pixmap.fill(Qt.GlobalColor.transparent)
+
+    def paint(self, painter, option, widget=None):
+        super().paint(painter, option, widget)
+        painter.save()
+        painter.drawPixmap(QPoint(), self._pixmap)
+        painter.restore()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.line.setP1(event.pos())
@@ -122,6 +128,13 @@ class GraphicsScene(QGraphicsScene):
         self.cursor_item = BrushCursor(self.image_item)
 
         self.addItem(self.image_item)
+
+    def set_brush_color(self, color: QColor):
+        self.label_item._brush_color = color
+
+    def change_brush_size_by(self, value: int):
+        self.cursor_item.change_size_by(value)
+        self.label_item.change_brush_size_by(value)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.cursor_item.setPos(event.scenePos())
@@ -185,7 +198,8 @@ class GraphicsView(QGraphicsView):
             self.scale(factor, factor)
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # change brush size
-            print(f"brush {sign}")
+            value = 5 if forward else -5
+            self._scene.change_brush_size_by(value)
 
 
 class MainWindow(QMainWindow):
