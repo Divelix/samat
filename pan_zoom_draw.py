@@ -1,3 +1,6 @@
+from typing import Optional
+from pathlib import Path
+
 from PyQt5.QtCore import (
     Qt,
     QEvent,
@@ -130,7 +133,8 @@ class GraphicsScene(QGraphicsScene):
         self.addItem(self.image_item)
 
     def set_brush_color(self, color: QColor):
-        self.label_item._brush_color = color
+        self.cursor_item.set_border_color(color)
+        self.label_item.set_brush_color(color)
 
     def change_brush_size_by(self, value: int):
         self.cursor_item.change_size_by(value)
@@ -153,7 +157,7 @@ class GraphicsView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QBrush(QColor(90, 90, 90)))
+        self.setBackgroundBrush(QBrush(QColor(50, 50, 50)))
         self.setFrameShape(QFrame.Shape.NoFrame)  # removes white widget outline
         self.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -205,6 +209,7 @@ class GraphicsView(QGraphicsView):
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.setWindowTitle("sam_annotator")
         self.resize(1000, 1000)
 
         # record QEvent names
@@ -245,9 +250,17 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         if a0.key() == Qt.Key.Key_Space:
             self._graphics_view.fitInView(
-                self._graphics_view.scene()._image_item,
+                self._graphics_view._scene.image_item,
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
+        elif a0.key() == Qt.Key.Key_0:
+            self._graphics_view._scene.set_brush_color(QColor(0, 0, 0))
+        elif a0.key() == Qt.Key.Key_1:
+            self._graphics_view._scene.set_brush_color(QColor(255, 0, 0))
+        elif a0.key() == Qt.Key.Key_2:
+            self._graphics_view._scene.set_brush_color(QColor(0, 255, 0))
+        elif a0.key() == Qt.Key.Key_3:
+            self._graphics_view._scene.set_brush_color(QColor(0, 0, 255))
         return super().keyPressEvent(a0)
 
 
