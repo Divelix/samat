@@ -1,9 +1,7 @@
-from typing import Optional
 from pathlib import Path
 
 from PyQt5.QtCore import (
     Qt,
-    QEvent,
     QPoint,
     QLineF,
     QPoint,

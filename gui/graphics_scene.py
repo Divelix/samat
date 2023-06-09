@@ -1,57 +1,39 @@
 from pathlib import Path
-from PyQt5.QtGui import QPixmap, QKeyEvent, QColor, QPen, QBrush
+
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QApplication,
     QGraphicsScene,
-    QGraphicsView,
-    QGraphicsEllipseItem,
     QGraphicsPixmapItem,
     QGraphicsSceneMouseEvent,
 )
-from PyQt5.QtCore import Qt, QRectF, pyqtSlot
 
 from .brush_cursor import BrushCursor
-from .annotation_layer import AnnotationLayer
+from .annotation_layer import LabelLayer
 
 
 class GraphicsScene(QGraphicsScene):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        init_brush_size = 50
-        bs = init_brush_size
-        of = -bs / 2
-        self._cursor = BrushCursor(QRectF(of, of, bs, bs))
-        self._image = QGraphicsPixmapItem(QPixmap(800, 800))
-        self._label = AnnotationLayer(self._image, init_brush_size)
+        self.image_item = QGraphicsPixmapItem()
+        self.label_item = LabelLayer(self.image_item)
+        self.cursor_item = BrushCursor(self.image_item)
 
-        self.addItem(self._image)
-        self.addItem(self._label)
-        self.addItem(self._cursor)
+        self.addItem(self.image_item)
+
+    def set_brush_color(self, color: QColor):
+        self.cursor_item.set_border_color(color)
+        self.label_item.set_brush_color(color)
+
+    def set_brush_eraser(self, value):
+        self.label_item.set_eraser(value)
+
+    def change_brush_size_by(self, value: int):
+        self.cursor_item.change_size_by(value)
+        self.label_item.change_brush_size_by(value)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        mouse_pos = event.scenePos()
-        self._cursor.setPos(mouse_pos)
+        self.cursor_item.setPos(event.scenePos())
+        super().mouseMoveEvent(event)
 
-    @pyqtSlot(int)
-    def change_brush_size_by(self, value: int):
-        self._cursor.change_size_by(value)
-        self._label.change_pen_size_by(value)
-
-    @pyqtSlot(QColor)
-    def set_brush_color(self, color: QColor):
-        self._cursor.set_border_color(color)
-        self._label.set_pen_color(color)
-
-    def load_sample(self, image_path: Path, label_path: Path):
-        print(f"load {image_path.stem} sample")
-        self._image.setPixmap(QPixmap(str(image_path)))
-        if label_path.exists():
-            self._label.set_image(str(label_path))
-        else:
-            self._label.clear()
-
-    def clear_label(self):
-        self._label.clear()
-
-    def save_label(self, out_path):
-        self._label.save(str(out_path))
+    def save_label(self, label_path: Path):
+        self.label_item.export_pixmap(label_path)

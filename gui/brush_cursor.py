@@ -1,14 +1,13 @@
-import sys
+from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen, QBrush
-from PyQt5.QtWidgets import (
-    QGraphicsEllipseItem,
-)
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtWidgets import QGraphicsEllipseItem
 
 
 class BrushCursor(QGraphicsEllipseItem):
-    def __init__(self, rect):
-        super().__init__(rect)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        rect = QRectF(-25, -25, 50, 50)
+        self.setRect(rect)
         self._border_pen = QPen()
         self._border_pen.setColor(Qt.GlobalColor.black)
         self._border_pen.setWidth(1)

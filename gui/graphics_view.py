@@ -1,86 +1,87 @@
 from pathlib import Path
-from typing import Optional
 
-from PyQt5.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-    QWidget,
-    QFrame,
+from PyQt5.QtCore import (
+    Qt,
+    QPoint,
+    QPoint,
+    QRectF,
+    QPointF,
+    QSizeF,
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QPointF, QEvent
 from PyQt5.QtGui import (
-    QBrush,
     QColor,
     QPixmap,
     QMouseEvent,
-    QResizeEvent,
+    QWheelEvent,
+    QBrush,
     QPainter,
-    QPen,
 )
+from PyQt5.QtWidgets import QFrame, QGraphicsView
+
+from .graphics_scene import GraphicsScene
 
 
 class GraphicsView(QGraphicsView):
-    """Image and annotation viewer (main UI element)"""
-
-    def __init__(self, parent: Optional[QWidget]) -> None:
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.panBtn = Qt.MouseButton.RightButton
-        self.brushBtn = Qt.MouseButton.LeftButton
-        self._zoom_limits = (0, 30)
+        self._scene = GraphicsScene(self)
+        self._pan_mode = False
+        self._last_pos = QPoint()
 
-        self.last_mouse_pos = QPoint()
-        self._zoom = 0
+        self.setScene(self._scene)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
+        self.setBackgroundBrush(QBrush(QColor(50, 50, 50)))
         self.setFrameShape(QFrame.Shape.NoFrame)  # removes white widget outline
         self.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def reset_zoom(self):
-        self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
-        self._zoom = 0
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        self.reset_zoom()
-        return super().resizeEvent(event)
-
-    def wheelEvent(self, event):
-        factor = 1
-        if event.angleDelta().y() > 0:
-            # zoom in
-            if self._zoom < self._zoom_limits[1]:
-                factor = 1.25
-                self._zoom += 1
+    def load_sample(self, image_path: Path, label_path: Path):
+        print(f"load {image_path.stem} sample")
+        image = QPixmap(str(image_path))
+        self._scene.setSceneRect(QRectF(QPointF(), QSizeF(image.size())))
+        self._scene.image_item.setPixmap(QPixmap(str(image_path)))
+        if label_path.exists():
+            self._scene.label_item.set_image(str(label_path))
         else:
-            # zoom out
-            if self._zoom > self._zoom_limits[0]:
-                factor = 0.8
-                self._zoom -= 1
-        self.scale(factor, factor)
+            self._scene.label_item.clear()
+        self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
+        self.centerOn(self._scene.image_item)
 
-    def mousePressEvent(self, event: QMouseEvent):
-        if event.button() == self.panBtn:
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            self.last_mouse_pos = event.pos()
+    def scrollBy(self, point: QPoint):
+        h_val = self.horizontalScrollBar().value() - point.x()
+        v_val = self.verticalScrollBar().value() - point.y()
+        self.horizontalScrollBar().setValue(h_val)
+        self.verticalScrollBar().setValue(v_val)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.RightButton:
+            self._pan_mode = True
+            self._last_pos = event.pos()
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event: QMouseEvent):
-        if event.buttons() == self.panBtn:
-            delta = event.pos() - self.last_mouse_pos
-            self.last_mouse_pos = event.pos()
-            self.horizontalScrollBar().setValue(
-                self.horizontalScrollBar().value() - delta.x()
-            )
-            self.verticalScrollBar().setValue(
-                self.verticalScrollBar().value() - delta.y()
-            )
-        super().mouseMoveEvent(event)
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._pan_mode:
+            curr_pos = event.pos()
+            delta = curr_pos - self._last_pos
+            self.scrollBy(delta)
+            self._last_pos = curr_pos
+        super().mouseMoveEvent(event)  # allows proper zoom-to-cursor
 
-    def mouseReleaseEvent(self, event: QMouseEvent):
-        """Stop mouse pan or zoom mode (apply zoom if valid)."""
-        if event.button() == self.panBtn:
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        super().mouseReleaseEvent(event)
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.RightButton:
+            self._pan_mode = False
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        forward = event.angleDelta().y() > 0
+        sign = "+" if forward else "-"
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            # zoom in/out
+            factor = 1.25 if forward else 0.8
+            self.scale(factor, factor)
+        elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            # change brush size
+            value = 5 if forward else -5
+            self._scene.change_brush_size_by(value)

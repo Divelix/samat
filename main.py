@@ -1,10 +1,12 @@
-from gui import MainWindow
-from PyQt5.QtWidgets import QApplication
 import sys
+
+from PyQt5.QtWidgets import QApplication
+
+from gui import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    gui = MainWindow("/hdd_ext4/datasets/images/raw_2")
-    gui.show()
-
+    mw = MainWindow("/hdd_ext4/datasets/images/raw_2")
+    mw.show()
+    mw.load_first_sample()
     sys.exit(app.exec_())
