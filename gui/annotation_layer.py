@@ -18,6 +18,7 @@ class LabelLayer(QGraphicsRectItem):
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
     def set_brush_color(self, color: QColor):
+        self.set_eraser(False)
         self._brush_color = color
 
     def set_eraser(self, value: bool):
@@ -43,10 +44,8 @@ class LabelLayer(QGraphicsRectItem):
         self._pixmap.load(path)
 
     def clear(self):
-        r = self.parentItem().pixmap().rect()
-        self.setRect(QRectF(r))
-        self._pixmap = QPixmap(r.size())
         self._pixmap.fill(Qt.GlobalColor.transparent)
+        self.update()  # to make changes be visible instantly
 
     def export_pixmap(self, out_path: Path):
         self._pixmap.save(str(out_path))

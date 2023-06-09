@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QKeyEvent
+from PyQt5.QtGui import QColor, QKeyEvent, QCloseEvent
 from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -57,6 +57,10 @@ class MainWindow(QMainWindow):
 
         self._curr_id = 0
 
+    def save_current_label(self):
+        curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
+        self._graphics_view.save_label_to(curr_label_path)
+
     def load_first_sample(self):
         self._curr_id = 0
         name = f"{self._image_stems[self._curr_id]}.png"
@@ -64,38 +68,10 @@ class MainWindow(QMainWindow):
         label_path = self._label_dir / name
         self._graphics_view.load_sample(image_path, label_path)
 
-    def keyPressEvent(self, a0: QKeyEvent) -> None:
-        if a0.key() == Qt.Key.Key_Space:
-            self._graphics_view.fitInView(
-                self._graphics_view._scene.image_item,
-                Qt.AspectRatioMode.KeepAspectRatio,
-            )
-        elif a0.key() == Qt.Key.Key_E:
-            self._graphics_view._scene.set_brush_eraser(True)
-        elif a0.key() == Qt.Key.Key_0:
-            self._graphics_view._scene.set_brush_eraser(False)
-            self._graphics_view._scene.set_brush_color(QColor(0, 0, 0))
-        elif a0.key() == Qt.Key.Key_1:
-            self._graphics_view._scene.set_brush_eraser(False)
-            self._graphics_view._scene.set_brush_color(QColor(255, 0, 0))
-        elif a0.key() == Qt.Key.Key_2:
-            self._graphics_view._scene.set_brush_eraser(False)
-            self._graphics_view._scene.set_brush_color(QColor(0, 255, 0))
-        elif a0.key() == Qt.Key.Key_3:
-            self._graphics_view._scene.set_brush_eraser(False)
-            self._graphics_view._scene.set_brush_color(QColor(0, 0, 255))
-        elif a0.key() == Qt.Key.Key_Comma:
-            self.switch_sample_by(-1)
-        elif a0.key() == Qt.Key.Key_Period:
-            self.switch_sample_by(1)
-
-        return super().keyPressEvent(a0)
-
     def switch_sample_by(self, step: int):
         if step == 0:
             return
-        curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
-        self._graphics_view._scene.save_label(curr_label_path)
+        self.save_current_label()
         max_id = len(self._image_stems) - 1
         corner_case_id = 0 if step < 0 else max_id
         new_id = self._curr_id + step
@@ -105,3 +81,29 @@ class MainWindow(QMainWindow):
         image_path = self._image_dir / new_name
         label_path = self._label_dir / new_name
         self._graphics_view.load_sample(image_path, label_path)
+
+    def keyPressEvent(self, a0: QKeyEvent) -> None:
+        if a0.key() == Qt.Key.Key_Space:
+            self._graphics_view.reset_zoom()
+        elif a0.key() == Qt.Key.Key_C:
+            self._graphics_view.clear_label()
+        elif a0.key() == Qt.Key.Key_E:
+            self._graphics_view._scene.set_brush_eraser(True)
+        elif a0.key() == Qt.Key.Key_0:
+            self._graphics_view._scene.set_brush_color(QColor(0, 0, 0))
+        elif a0.key() == Qt.Key.Key_1:
+            self._graphics_view._scene.set_brush_color(QColor(255, 0, 0))
+        elif a0.key() == Qt.Key.Key_2:
+            self._graphics_view._scene.set_brush_color(QColor(0, 255, 0))
+        elif a0.key() == Qt.Key.Key_3:
+            self._graphics_view._scene.set_brush_color(QColor(0, 0, 255))
+        elif a0.key() == Qt.Key.Key_Comma:
+            self.switch_sample_by(-1)
+        elif a0.key() == Qt.Key.Key_Period:
+            self.switch_sample_by(1)
+
+        return super().keyPressEvent(a0)
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        self.save_current_label()
+        return super().closeEvent(a0)

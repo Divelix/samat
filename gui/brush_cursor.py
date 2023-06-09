@@ -32,3 +32,4 @@ class BrushCursor(QGraphicsEllipseItem):
 
     def set_border_color(self, color: QColor):
         self._border_pen.setColor(color)
+        self.update()  # to make changes be visible instantly

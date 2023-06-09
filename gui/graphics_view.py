@@ -38,6 +38,18 @@ class GraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+    def reset_zoom(self):
+        self.fitInView(
+            self._scene.image_item,
+            Qt.AspectRatioMode.KeepAspectRatio,
+        )
+
+    def clear_label(self):
+        self._scene.label_item.clear()
+
+    def save_label_to(self, path: Path):
+        self._scene.save_label(path)
+
     def load_sample(self, image_path: Path, label_path: Path):
         print(f"load {image_path.stem} sample")
         image = QPixmap(str(image_path))
