@@ -76,6 +76,7 @@ class LabelLayer(QGraphicsRectItem):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setOpacity(0.5)
+        self._erase_state = False
         self._brush_color = QColor(0, 0, 0)
         self._brush_size = 50
         self.setPen(QPen(Qt.PenStyle.NoPen))
@@ -86,11 +87,16 @@ class LabelLayer(QGraphicsRectItem):
     def set_brush_color(self, color: QColor):
         self._brush_color = color
 
+    def set_eraser(self, value: bool):
+        self._erase_state = value
+
     def change_brush_size_by(self, size: int):
         self._brush_size += size
 
     def draw_line(self):
         painter = QPainter(self._pixmap)
+        if self._erase_state:
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
         pen = QPen(self._brush_color, self._brush_size)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
@@ -98,11 +104,19 @@ class LabelLayer(QGraphicsRectItem):
         painter.end()
         self.update()
 
-    def reset(self):
+    def set_image(self, path: str):
+        r = self.parentItem().pixmap().rect()
+        self.setRect(QRectF(r))
+        self._pixmap.load(path)
+
+    def clear(self):
         r = self.parentItem().pixmap().rect()
         self.setRect(QRectF(r))
         self._pixmap = QPixmap(r.size())
         self._pixmap.fill(Qt.GlobalColor.transparent)
+
+    def export_pixmap(self, out_path: Path):
+        self._pixmap.save(str(out_path))
 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
@@ -136,6 +150,9 @@ class GraphicsScene(QGraphicsScene):
         self.cursor_item.set_border_color(color)
         self.label_item.set_brush_color(color)
 
+    def set_brush_eraser(self, value):
+        self.label_item.set_eraser(value)
+
     def change_brush_size_by(self, value: int):
         self.cursor_item.change_size_by(value)
         self.label_item.change_brush_size_by(value)
@@ -143,6 +160,9 @@ class GraphicsScene(QGraphicsScene):
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.cursor_item.setPos(event.scenePos())
         super().mouseMoveEvent(event)
+
+    def save_label(self, label_path: Path):
+        self.label_item.export_pixmap(label_path)
 
 
 class GraphicsView(QGraphicsView):
@@ -162,10 +182,15 @@ class GraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def set_image(self, image: QPixmap):
+    def load_sample(self, image_path: Path, label_path: Path):
+        print(f"load {image_path.stem} sample")
+        image = QPixmap(str(image_path))
         self._scene.setSceneRect(QRectF(QPointF(), QSizeF(image.size())))
-        self._scene.image_item.setPixmap(image)
-        self._scene.label_item.reset()
+        self._scene.image_item.setPixmap(QPixmap(str(image_path)))
+        if label_path.exists():
+            self._scene.label_item.set_image(str(label_path))
+        else:
+            self._scene.label_item.clear()
         self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
         self.centerOn(self._scene.image_item)
 
@@ -207,17 +232,15 @@ class GraphicsView(QGraphicsView):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, workdir: str):
         super(MainWindow, self).__init__()
         self.setWindowTitle("sam_annotator")
         self.resize(1000, 1000)
-
-        # record QEvent names
-        self._string_name = {}
-        for name in vars(QEvent):
-            attribute = getattr(QEvent, name)
-            if type(attribute) == QEvent.Type:
-                self._string_name[attribute] = name
+        self._workdir = Path(workdir)
+        self._image_dir = self._workdir / "images"
+        self._label_dir = self._workdir / "labels"
+        self._label_dir.mkdir(exist_ok=True)
+        self._image_stems = [path.stem for path in sorted(self._image_dir.iterdir())]
 
         self._graphics_view = GraphicsView()
 
@@ -247,28 +270,63 @@ class MainWindow(QMainWindow):
         lay.addWidget(self._graphics_view, stretch=1)
         lay.addLayout(vlay, stretch=0)
 
+        self._curr_id = 0
+
+    def load_first_sample(self):
+        self._curr_id = 0
+        name = f"{self._image_stems[self._curr_id]}.png"
+        image_path = self._image_dir / name
+        label_path = self._label_dir / name
+        self._graphics_view.load_sample(image_path, label_path)
+
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         if a0.key() == Qt.Key.Key_Space:
             self._graphics_view.fitInView(
                 self._graphics_view._scene.image_item,
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
+        elif a0.key() == Qt.Key.Key_E:
+            self._graphics_view._scene.set_brush_eraser(True)
         elif a0.key() == Qt.Key.Key_0:
+            self._graphics_view._scene.set_brush_eraser(False)
             self._graphics_view._scene.set_brush_color(QColor(0, 0, 0))
         elif a0.key() == Qt.Key.Key_1:
+            self._graphics_view._scene.set_brush_eraser(False)
             self._graphics_view._scene.set_brush_color(QColor(255, 0, 0))
         elif a0.key() == Qt.Key.Key_2:
+            self._graphics_view._scene.set_brush_eraser(False)
             self._graphics_view._scene.set_brush_color(QColor(0, 255, 0))
         elif a0.key() == Qt.Key.Key_3:
+            self._graphics_view._scene.set_brush_eraser(False)
             self._graphics_view._scene.set_brush_color(QColor(0, 0, 255))
+        elif a0.key() == Qt.Key.Key_Comma:
+            self.switch_sample_by(-1)
+        elif a0.key() == Qt.Key.Key_Period:
+            self.switch_sample_by(1)
+
         return super().keyPressEvent(a0)
+
+    def switch_sample_by(self, step: int):
+        if step == 0:
+            return
+        curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
+        self._graphics_view._scene.save_label(curr_label_path)
+        max_id = len(self._image_stems) - 1
+        corner_case_id = 0 if step < 0 else max_id
+        new_id = self._curr_id + step
+        new_id = new_id if new_id in range(max_id + 1) else corner_case_id
+        new_name = f"{self._image_stems[new_id]}.png"
+        self._curr_id = new_id
+        image_path = self._image_dir / new_name
+        label_path = self._label_dir / new_name
+        self._graphics_view.load_sample(image_path, label_path)
 
 
 if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
-    mw = MainWindow()
+    mw = MainWindow("/hdd_ext4/datasets/images/raw_2")
     mw.show()
-    mw._graphics_view.set_image(QPixmap("1.jpg"))
+    mw.load_first_sample()
     sys.exit(app.exec_())
