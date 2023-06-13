@@ -38,12 +38,10 @@ class GraphicsView(QGraphicsView):
         self.setFrameShape(QFrame.Shape.NoFrame)  # removes white widget outline
         self.setRenderHint(QPainter.RenderHint.HighQualityAntialiasing)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setCursor(Qt.CursorShape.BlankCursor)
 
     def reset_zoom(self):
-        self.fitInView(
-            self._scene.image_item,
-            Qt.AspectRatioMode.KeepAspectRatio,
-        )
+        self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     def clear_label(self):
         self._scene.label_item.clear()
@@ -73,6 +71,7 @@ class GraphicsView(QGraphicsView):
         if event.button() == Qt.MouseButton.RightButton:
             self._pan_mode = True
             self._last_pos = event.pos()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -86,6 +85,7 @@ class GraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.RightButton:
             self._pan_mode = False
+            self.setCursor(Qt.CursorShape.BlankCursor)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         forward = event.angleDelta().y() > 0
