@@ -14,7 +14,7 @@ class LabelLayer(QGraphicsRectItem):
         self._brush_size = 50
         self.setPen(QPen(Qt.PenStyle.NoPen))
         self._pixmap = QPixmap()
-        self.line = QLineF()
+        self._line = QLineF()
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
     def set_brush_color(self, color: QColor):
@@ -27,14 +27,14 @@ class LabelLayer(QGraphicsRectItem):
     def set_size(self, size: int):
         self._brush_size = size
 
-    def draw_line(self):
+    def _draw_line(self):
         painter = QPainter(self._pixmap)
         if self._erase_state:
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
         pen = QPen(self._brush_color, self._brush_size)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
-        painter.drawLine(self.line)
+        painter.drawLine(self._line)
         painter.end()
         self.update()
 
@@ -44,6 +44,9 @@ class LabelLayer(QGraphicsRectItem):
         self._pixmap.load(path)
 
     def clear(self):
+        r = self.parentItem().pixmap().rect()
+        self.setRect(QRectF(r))
+        self._pixmap = QPixmap(r.size())
         self._pixmap.fill(Qt.GlobalColor.transparent)
         self.update()  # to make changes be visible instantly
 
@@ -57,13 +60,13 @@ class LabelLayer(QGraphicsRectItem):
         painter.restore()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.line.setP1(event.pos())
-        self.line.setP2(event.pos())
+        self._line.setP1(event.pos())
+        self._line.setP2(event.pos())
         super().mousePressEvent(event)
         event.accept()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.line.setP2(event.pos())
-        self.draw_line()
-        self.line.setP1(event.pos())
+        self._line.setP2(event.pos())
+        self._draw_line()
+        self._line.setP1(event.pos())
         super().mouseMoveEvent(event)

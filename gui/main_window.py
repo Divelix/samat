@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
         elif a0.key() == Qt.Key.Key_C:
             self._graphics_view.clear_label()
         elif a0.key() == Qt.Key.Key_E:
+            self.cs_list.clearSelection()
             self._graphics_view._scene.set_brush_eraser(True)
         elif a0.key() in range(49, 58):
             idx = int(a0.key()) - 49

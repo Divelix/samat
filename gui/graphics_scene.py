@@ -26,6 +26,8 @@ class GraphicsScene(QGraphicsScene):
 
     def set_brush_eraser(self, value):
         self.label_item.set_eraser(value)
+        if value:
+            self.cursor_item.set_border_color(QColor(255, 255, 255))
 
     def set_brush_color(self, color: QColor):
         self.cursor_item.set_border_color(color)
