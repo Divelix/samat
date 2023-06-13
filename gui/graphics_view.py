@@ -50,7 +50,6 @@ class GraphicsView(QGraphicsView):
         self._scene.save_label(path)
 
     def load_sample(self, image_path: Path, label_path: Path):
-        print(f"load {image_path.stem} sample")
         image = QPixmap(str(image_path))
         self._scene.setSceneRect(QRectF(QPointF(), QSizeF(image.size())))
         self._scene.image_item.setPixmap(QPixmap(str(image_path)))

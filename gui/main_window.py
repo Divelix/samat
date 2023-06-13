@@ -39,7 +39,16 @@ class MainWindow(QMainWindow):
         self.brush_feedback.connect(self.on_brush_size_change)
         self._graphics_view = GraphicsView(self.brush_feedback)
 
-        # Brush size (bs) group
+        # Dataset group
+        ds_group = QGroupBox(self.tr("Dataset"))
+
+        self.ds_label = QLabel()
+        self.ds_label.setText("Sample: 000000.png")
+
+        ds_vlay = QVBoxLayout(ds_group)
+        ds_vlay.addWidget(self.ds_label)
+
+        # Brush size group
         bs_group = QGroupBox(self.tr("Brush"))
 
         self.bs_value = QLabel()
@@ -56,7 +65,7 @@ class MainWindow(QMainWindow):
         bs_vlay.addWidget(self.bs_value)
         bs_vlay.addWidget(self.bs_slider)
 
-        # Classes selection group
+        # Classs selection group
         cs_group = QGroupBox(self.tr("Classes"))
 
         self.cs_list = QListWidget()
@@ -73,6 +82,7 @@ class MainWindow(QMainWindow):
         cs_vlay.addWidget(self.cs_list)
 
         vlay = QVBoxLayout()
+        vlay.addWidget(ds_group)
         vlay.addWidget(bs_group)
         vlay.addWidget(cs_group)
         vlay.addStretch()
@@ -114,6 +124,7 @@ class MainWindow(QMainWindow):
         image_path = self._image_dir / name
         label_path = self._label_dir / name
         self._graphics_view.load_sample(image_path, label_path)
+        self.ds_label.setText(f"Sample: {name}")
 
     def switch_sample_by(self, step: int):
         if step == 0:
@@ -128,6 +139,7 @@ class MainWindow(QMainWindow):
         image_path = self._image_dir / new_name
         label_path = self._label_dir / new_name
         self._graphics_view.load_sample(image_path, label_path)
+        self.ds_label.setText(f"Sample: {new_name}")
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         if a0.key() == Qt.Key.Key_Space:
