@@ -37,7 +37,7 @@ class GraphicsScene(QGraphicsScene):
         self.cursor_item.set_size(self._brush_size)
         self.label_item.set_size(self._brush_size)
 
-    def change_brush_size(self, sign: int, brush_feedback: pyqtSignal):
+    def change_brush_size(self, sign: int, bf: pyqtSignal):
         # fmt: off
         assert sign in (-1, 1), f"Sign value must be either 1 or -1, but {sign} was given"
         # fmt: on
@@ -46,8 +46,8 @@ class GraphicsScene(QGraphicsScene):
         new_size = min(new_size, self._brush_limits[1])
         self.cursor_item.set_size(new_size)
         self.label_item.set_size(new_size)
-        brush_feedback.emit(new_size)
         self._brush_size = new_size
+        bf.emit(new_size)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.cursor_item.setPos(event.scenePos())

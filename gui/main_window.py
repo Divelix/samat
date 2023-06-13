@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor, QKeyEvent, QCloseEvent
@@ -23,18 +24,25 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("sam_annotator")
         self.resize(1000, 1000)
         self._workdir = Path(workdir)
+        self._class_dir = self._workdir / "classes.json"
         self._image_dir = self._workdir / "images"
         self._label_dir = self._workdir / "labels"
         self._label_dir.mkdir(exist_ok=True)
         self._image_stems = [path.stem for path in sorted(self._image_dir.iterdir())]
+        with open(self._class_dir, "r") as f:
+            self._classes = json.loads("".join(f.readlines()))["classes"]
+        ids = [c["id"] for c in self._classes]
+        colors = [c["color"] for c in self._classes]
+        self._id2color = {k: v for k, v in zip(ids, colors)}
         self.brush_feedback.connect(self.on_brush_size_change)
         self._graphics_view = GraphicsView(self.brush_feedback)
+        self._graphics_view._scene.set_brush_color(QColor(colors[0]))
 
         # Brush size (bs) group
-        bs_group = QGroupBox(self.tr("Brush size"))
+        bs_group = QGroupBox(self.tr("Brush"))
 
         self.bs_value = QLabel()
-        self.bs_value.setText("Value: 50")
+        self.bs_value.setText("Size: 50 px")
 
         self.bs_slider = QSlider()
         self.bs_slider.setOrientation(Qt.Orientation.Horizontal)
@@ -62,13 +70,13 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(int)
     def on_slider_change(self, value: int):
-        self.bs_value.setText(f"Value: {value}")
+        self.bs_value.setText(f"Size: {value} px")
         self._graphics_view._scene.set_brush_size(value)
 
     @pyqtSlot(int)
     def on_brush_size_change(self, value: int):
         # updates slider and value label on brush size change via mouse wheel
-        self.bs_value.setText(f"Value: {value}")
+        self.bs_value.setText(f"Size: {value} px")
         self.bs_slider.setSliderPosition(value)
 
     def save_current_label(self):
@@ -103,14 +111,11 @@ class MainWindow(QMainWindow):
             self._graphics_view.clear_label()
         elif a0.key() == Qt.Key.Key_E:
             self._graphics_view._scene.set_brush_eraser(True)
-        elif a0.key() == Qt.Key.Key_0:
-            self._graphics_view._scene.set_brush_color(QColor(0, 0, 0))
-        elif a0.key() == Qt.Key.Key_1:
-            self._graphics_view._scene.set_brush_color(QColor(255, 0, 0))
-        elif a0.key() == Qt.Key.Key_2:
-            self._graphics_view._scene.set_brush_color(QColor(0, 255, 0))
-        elif a0.key() == Qt.Key.Key_3:
-            self._graphics_view._scene.set_brush_color(QColor(0, 0, 255))
+        elif a0.key() in range(49, 58):
+            idx = int(a0.key()) - 49
+            color = self._id2color.get(idx)
+            if color:
+                self._graphics_view._scene.set_brush_color(QColor(color))
         elif a0.key() == Qt.Key.Key_Comma:
             self.switch_sample_by(-1)
         elif a0.key() == Qt.Key.Key_Period:
