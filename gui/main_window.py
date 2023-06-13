@@ -1,22 +1,23 @@
 from pathlib import Path
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor, QKeyEvent, QCloseEvent
 from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
     QGroupBox,
-    QPushButton,
     QSlider,
-    QFormLayout,
     QVBoxLayout,
     QHBoxLayout,
+    QLabel,
 )
 
 from .graphics_view import GraphicsView
 
 
 class MainWindow(QMainWindow):
+    brush_feedback = pyqtSignal(int)  # allows QSlider react on mouse wheel
+
     def __init__(self, workdir: str):
         super(MainWindow, self).__init__()
         self.setWindowTitle("sam_annotator")
@@ -26,26 +27,28 @@ class MainWindow(QMainWindow):
         self._label_dir = self._workdir / "labels"
         self._label_dir.mkdir(exist_ok=True)
         self._image_stems = [path.stem for path in sorted(self._image_dir.iterdir())]
+        self.brush_feedback.connect(self.on_brush_size_change)
+        self._graphics_view = GraphicsView(self.brush_feedback)
 
-        self._graphics_view = GraphicsView()
+        # Brush size (bs) group
+        bs_group = QGroupBox(self.tr("Brush size"))
 
-        pen_group = QGroupBox(self.tr("Pen settings"))
+        self.bs_value = QLabel()
+        self.bs_value.setText("Value: 50")
 
-        self.pen_button = QPushButton()
-        # color = QColor(0, 0, 0)
-        # self.pen_button.setStyleSheet("background-color: {}".format(color.name()))
-        self.pen_slider = QSlider(
-            Qt.Horizontal,
-            minimum=1,
-            maximum=100,
-            value=10,
-        )
-        pen_lay = QFormLayout(pen_group)
-        pen_lay.addRow(self.tr("Pen color"), self.pen_button)
-        pen_lay.addRow(self.tr("Pen size"), self.pen_slider)
+        self.bs_slider = QSlider()
+        self.bs_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.bs_slider.setMinimum(1)
+        self.bs_slider.setMaximum(150)
+        self.bs_slider.setSliderPosition(50)
+        self.bs_slider.valueChanged.connect(self.on_slider_change)
+
+        bs_vlay = QVBoxLayout(bs_group)
+        bs_vlay.addWidget(self.bs_value)
+        bs_vlay.addWidget(self.bs_slider)
 
         vlay = QVBoxLayout()
-        vlay.addWidget(pen_group)
+        vlay.addWidget(bs_group)
         vlay.addStretch()
 
         central_widget = QWidget()
@@ -56,6 +59,17 @@ class MainWindow(QMainWindow):
         lay.addLayout(vlay, stretch=0)
 
         self._curr_id = 0
+
+    @pyqtSlot(int)
+    def on_slider_change(self, value: int):
+        self.bs_value.setText(f"Value: {value}")
+        self._graphics_view._scene.set_brush_size(value)
+
+    @pyqtSlot(int)
+    def on_brush_size_change(self, value: int):
+        # updates slider and value label on brush size change via mouse wheel
+        self.bs_value.setText(f"Value: {value}")
+        self.bs_slider.setSliderPosition(value)
 
     def save_current_label(self):
         curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"

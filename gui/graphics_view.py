@@ -22,11 +22,12 @@ from .graphics_scene import GraphicsScene
 
 
 class GraphicsView(QGraphicsView):
-    def __init__(self, parent=None):
+    def __init__(self, brush_feedback, parent=None):
         super().__init__(parent)
         self._scene = GraphicsScene(self)
         self._pan_mode = False
         self._last_pos = QPoint()
+        self.brush_feedback = brush_feedback
 
         self.setScene(self._scene)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -95,5 +96,5 @@ class GraphicsView(QGraphicsView):
             self.scale(factor, factor)
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # change brush size
-            value = 5 if forward else -5
-            self._scene.change_brush_size_by(value)
+            sign = -1 if forward else 1
+            self._scene.change_brush_size(sign, self.brush_feedback)

@@ -20,15 +20,10 @@ class BrushCursor(QGraphicsEllipseItem):
         painter.setBrush(self._fill_brush)
         painter.drawEllipse(self.rect())
 
-    def change_size_by(self, value: int):
-        rect = self.rect()
-        offset = value / 2
-        size = int(rect.width()) + value
-        rect.setX(rect.x() - offset)
-        rect.setY(rect.y() - offset)
-        rect.setWidth(size)
-        rect.setHeight(size)
-        self.setRect(rect)
+    def set_size(self, value: int):
+        offset = -value / 2
+        new_rect = QRectF(offset, offset, value, value)
+        self.setRect(new_rect)
 
     def set_border_color(self, color: QColor):
         self._border_pen.setColor(color)

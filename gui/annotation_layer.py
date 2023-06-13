@@ -24,8 +24,8 @@ class LabelLayer(QGraphicsRectItem):
     def set_eraser(self, value: bool):
         self._erase_state = value
 
-    def change_brush_size_by(self, size: int):
-        self._brush_size += size
+    def set_size(self, size: int):
+        self._brush_size = size
 
     def draw_line(self):
         painter = QPainter(self._pixmap)
