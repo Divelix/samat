@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QColor, QKeyEvent, QCloseEvent
+from PyQt5.QtGui import QColor, QKeyEvent, QCloseEvent, QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -11,6 +11,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
 )
 
 from .graphics_view import GraphicsView
@@ -36,7 +38,6 @@ class MainWindow(QMainWindow):
         self._id2color = {k: v for k, v in zip(ids, colors)}
         self.brush_feedback.connect(self.on_brush_size_change)
         self._graphics_view = GraphicsView(self.brush_feedback)
-        self._graphics_view._scene.set_brush_color(QColor(colors[0]))
 
         # Brush size (bs) group
         bs_group = QGroupBox(self.tr("Brush"))
@@ -55,8 +56,25 @@ class MainWindow(QMainWindow):
         bs_vlay.addWidget(self.bs_value)
         bs_vlay.addWidget(self.bs_slider)
 
+        # Classes selection group
+        cs_group = QGroupBox(self.tr("Classes"))
+
+        self.cs_list = QListWidget()
+        for i, c in enumerate(self._classes):
+            color = QColor(c["color"])
+            pixmap = QPixmap(20, 20)
+            pixmap.fill(color)
+            text = f"[{i+1}] {c['name']}"
+            item = QListWidgetItem(QIcon(pixmap), text)
+            self.cs_list.addItem(item)
+        self.cs_list.itemClicked.connect(self.on_item_clicked)
+
+        cs_vlay = QVBoxLayout(cs_group)
+        cs_vlay.addWidget(self.cs_list)
+
         vlay = QVBoxLayout()
         vlay.addWidget(bs_group)
+        vlay.addWidget(cs_group)
         vlay.addStretch()
 
         central_widget = QWidget()
@@ -67,6 +85,8 @@ class MainWindow(QMainWindow):
         lay.addLayout(vlay, stretch=0)
 
         self._curr_id = 0
+        self._graphics_view._scene.set_brush_color(QColor(colors[0]))
+        self.cs_list.setCurrentRow(0)
 
     @pyqtSlot(int)
     def on_slider_change(self, value: int):
@@ -78,6 +98,11 @@ class MainWindow(QMainWindow):
         # updates slider and value label on brush size change via mouse wheel
         self.bs_value.setText(f"Size: {value} px")
         self.bs_slider.setSliderPosition(value)
+
+    def on_item_clicked(self, item: QListWidgetItem):
+        idx = self.sender().currentRow()
+        color = self._id2color[idx]
+        self._graphics_view._scene.set_brush_color(QColor(color))
 
     def save_current_label(self):
         curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
@@ -116,6 +141,7 @@ class MainWindow(QMainWindow):
             color = self._id2color.get(idx)
             if color:
                 self._graphics_view._scene.set_brush_color(QColor(color))
+                self.cs_list.setCurrentRow(idx)
         elif a0.key() == Qt.Key.Key_Comma:
             self.switch_sample_by(-1)
         elif a0.key() == Qt.Key.Key_Period:
