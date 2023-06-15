@@ -41,6 +41,12 @@ class GraphicsView(QGraphicsView):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.BlankCursor)
 
+    def set_label_opacity(self, value: int):
+        self._scene.label_item.setOpacity(value / 100.0)
+
+    def set_sam_opacity(self, value: int):
+        self._scene.sam_item.setOpacity(value / 100.0)
+
     @pyqtSlot(bool)
     def handle_sam_signal(self, is_sam: bool):
         self._sam_mode = is_sam

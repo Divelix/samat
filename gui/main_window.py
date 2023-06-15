@@ -45,15 +45,6 @@ class MainWindow(QMainWindow):
         self._graphics_view = GraphicsView(self.brush_feedback)
         self.sam_signal.connect(self._graphics_view.handle_sam_signal)
 
-        # SAM group
-        sam_group = QGroupBox(self.tr("SAM"))
-
-        self.sam_checkbox = QCheckBox("SAM assistance")
-        self.sam_checkbox.stateChanged.connect(self.on_sam_change)
-
-        sam_vlay = QVBoxLayout(sam_group)
-        sam_vlay.addWidget(self.sam_checkbox)
-
         # Dataset group
         ds_group = QGroupBox(self.tr("Dataset"))
 
@@ -62,6 +53,44 @@ class MainWindow(QMainWindow):
 
         ds_vlay = QVBoxLayout(ds_group)
         ds_vlay.addWidget(self.ds_label)
+
+        # Layers group
+        ls_group = QGroupBox(self.tr("Layers"))
+
+        self.ls_label_value = QLabel()
+        self.ls_label_value.setText("Label opacity: 50%")
+
+        self.ls_label_slider = QSlider()
+        self.ls_label_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.ls_label_slider.setMinimum(0)
+        self.ls_label_slider.setMaximum(100)
+        self.ls_label_slider.setSliderPosition(50)
+        self.ls_label_slider.valueChanged.connect(self.on_ls_label_slider_change)
+
+        self.ls_sam_value = QLabel()
+        self.ls_sam_value.setText("SAM opacity: 0%")
+
+        self.ls_sam_slider = QSlider()
+        self.ls_sam_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.ls_sam_slider.setMinimum(0)
+        self.ls_sam_slider.setMaximum(100)
+        self.ls_sam_slider.setSliderPosition(0)
+        self.ls_sam_slider.valueChanged.connect(self.on_ls_sam_slider_change)
+
+        ls_vlay = QVBoxLayout(ls_group)
+        ls_vlay.addWidget(self.ls_label_value)
+        ls_vlay.addWidget(self.ls_label_slider)
+        ls_vlay.addWidget(self.ls_sam_value)
+        ls_vlay.addWidget(self.ls_sam_slider)
+
+        # SAM group
+        sam_group = QGroupBox(self.tr("SAM"))
+
+        self.sam_checkbox = QCheckBox("SAM assistance")
+        self.sam_checkbox.stateChanged.connect(self.on_sam_change)
+
+        sam_vlay = QVBoxLayout(sam_group)
+        sam_vlay.addWidget(self.sam_checkbox)
 
         # Brush size group
         bs_group = QGroupBox(self.tr("Brush"))
@@ -74,7 +103,7 @@ class MainWindow(QMainWindow):
         self.bs_slider.setMinimum(1)
         self.bs_slider.setMaximum(150)
         self.bs_slider.setSliderPosition(50)
-        self.bs_slider.valueChanged.connect(self.on_slider_change)
+        self.bs_slider.valueChanged.connect(self.on_bs_slider_change)
 
         bs_vlay = QVBoxLayout(bs_group)
         bs_vlay.addWidget(self.bs_value)
@@ -97,8 +126,9 @@ class MainWindow(QMainWindow):
         cs_vlay.addWidget(self.cs_list)
 
         vlay = QVBoxLayout()
-        vlay.addWidget(sam_group)
         vlay.addWidget(ds_group)
+        vlay.addWidget(sam_group)
+        vlay.addWidget(ls_group)
         vlay.addWidget(bs_group)
         vlay.addWidget(cs_group)
         vlay.addStretch()
@@ -124,7 +154,17 @@ class MainWindow(QMainWindow):
             print("unsupported check state")
 
     @pyqtSlot(int)
-    def on_slider_change(self, value: int):
+    def on_ls_label_slider_change(self, value: int):
+        self.ls_label_value.setText(f"Label opacity: {value}%")
+        self._graphics_view.set_label_opacity(value)
+
+    @pyqtSlot(int)
+    def on_ls_sam_slider_change(self, value: int):
+        self.ls_sam_value.setText(f"SAM opacity: {value}%")
+        self._graphics_view.set_sam_opacity(value)
+
+    @pyqtSlot(int)
+    def on_bs_slider_change(self, value: int):
         self.bs_value.setText(f"Size: {value} px")
         self._graphics_view.set_brush_size(value)
 

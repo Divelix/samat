@@ -7,12 +7,14 @@ import numpy as np
 class SamLayer(QGraphicsRectItem):
     def __init__(self, parent, label_signal):
         super().__init__(parent)
-        self.setOpacity(0.5)
+        self.setOpacity(0.0)
         self.setPen(QPen(Qt.PenStyle.NoPen))
 
         self._label_signal = label_signal
         self._pixmap = QPixmap()
         self._sam_mode = False
+        self._img = None  # QImage to fetch color from
+        self._np_img = None  # np array for fast pixels fetch
 
     def set_image(self, path: str):
         r = self.parentItem().pixmap().rect()
@@ -26,8 +28,8 @@ class SamLayer(QGraphicsRectItem):
         buffer.setsize(image.byteCount())
         np_img = np.frombuffer(buffer, dtype=np.uint8)
         np_img = np_img.reshape((image.height(), image.width(), 4))
-        self._img = image  # QImage to fetch color from
-        self._np_img = np_img  # np array for fast pixels fetch
+        self._img = image
+        self._np_img = np_img
 
     def clear(self):
         r = self.parentItem().pixmap().rect()
@@ -43,7 +45,7 @@ class SamLayer(QGraphicsRectItem):
         painter.restore()
 
     def handle_click(self, pos: QPointF):
-        if not self._sam_mode:
+        if not self._sam_mode or not self._img:
             return
         x = int(pos.x())
         y = int(pos.y())
