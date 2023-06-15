@@ -10,14 +10,16 @@ class LabelLayer(QGraphicsRectItem):
     def __init__(self, parent, sam_signal):
         super().__init__(parent)
         self.setOpacity(0.5)
+        self.setPen(QPen(Qt.PenStyle.NoPen))
+        self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+
         self._sam_signal = sam_signal
         self._erase_state = False
         self._brush_color = QColor(0, 0, 0)
         self._brush_size = 50
-        self.setPen(QPen(Qt.PenStyle.NoPen))
         self._pixmap = QPixmap()
         self._line = QLineF()
-        self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+        self._sam_mode = False
 
     def set_brush_color(self, color: QColor):
         self.set_eraser(False)
@@ -67,8 +69,9 @@ class LabelLayer(QGraphicsRectItem):
     def export_pixmap(self, out_path: Path):
         self._pixmap.save(str(out_path))
 
-    def handle_bundle(self, bundle):
-        self._draw_bundle(bundle)
+    def handle_bundle(self, bundle: np.ndarray):
+        if self._sam_mode:
+            self._draw_bundle(bundle)
 
     def paint(self, painter, option, widget=None):
         super().paint(painter, option, widget)
@@ -89,6 +92,5 @@ class LabelLayer(QGraphicsRectItem):
         self._line.setP1(event.pos())
         super().mouseMoveEvent(event)
 
-    # def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-    #     print("release label")
-    #     super().mouseReleaseEvent(event)
+    def handle_sam_mode(self, is_sam: bool):
+        self._sam_mode = is_sam

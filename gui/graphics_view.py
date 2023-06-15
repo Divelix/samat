@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PyQt5.QtCore import (
     Qt,
-    QPoint,
+    pyqtSlot,
     QPoint,
     QRectF,
     QPointF,
@@ -22,12 +22,13 @@ from .graphics_scene import GraphicsScene
 
 
 class GraphicsView(QGraphicsView):
-    def __init__(self, brush_feedback, sam_mode=False, parent=None):
+    def __init__(self, brush_feedback, parent=None):
         super().__init__(parent)
-        self._scene = GraphicsScene(self, sam_mode)
+        self._scene = GraphicsScene(self)
         self._pan_mode = False
         self._last_pos = QPoint()
-        self.brush_feedback = brush_feedback
+        self._brush_feedback = brush_feedback
+        self._sam_mode = False
 
         self.setScene(self._scene)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -40,6 +41,20 @@ class GraphicsView(QGraphicsView):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.BlankCursor)
 
+    @pyqtSlot(bool)
+    def handle_sam_signal(self, is_sam: bool):
+        self._sam_mode = is_sam
+        self._scene.handle_sam_mode(is_sam)
+
+    def set_brush_color(self, color: QColor):
+        self._scene.set_brush_color(color)
+
+    def set_brush_size(self, value: int):
+        self._scene.set_brush_size(value)
+
+    def set_eraser(self, value: bool):
+        self._scene.set_eraser(value)
+
     def reset_zoom(self):
         self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
 
@@ -49,7 +64,7 @@ class GraphicsView(QGraphicsView):
     def save_label_to(self, path: Path):
         self._scene.save_label(path)
 
-    def load_sample(self, image_path: Path, label_path: Path, sam_path: Path | None):
+    def load_sample(self, image_path: Path, label_path: Path, sam_path: Path):
         image = QPixmap(str(image_path))
         self._scene.setSceneRect(QRectF(QPointF(), QSizeF(image.size())))
         self._scene.image_item.setPixmap(QPixmap(str(image_path)))
@@ -57,8 +72,7 @@ class GraphicsView(QGraphicsView):
             self._scene.label_item.set_image(str(label_path))
         else:
             self._scene.label_item.clear()
-        if sam_path:
-            assert sam_path.exists(), "SAM image not found"
+        if sam_path.exists():
             self._scene.sam_item.set_image(str(sam_path))
         self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
         self.centerOn(self._scene.image_item)
@@ -92,7 +106,6 @@ class GraphicsView(QGraphicsView):
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         forward = event.angleDelta().y() > 0
-        sign = "+" if forward else "-"
         if event.modifiers() == Qt.KeyboardModifier.NoModifier:
             # zoom in/out
             factor = 1.25 if forward else 0.8
@@ -100,4 +113,4 @@ class GraphicsView(QGraphicsView):
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # change brush size
             sign = -1 if forward else 1
-            self._scene.change_brush_size(sign, self.brush_feedback)
+            self._scene.change_brush_size(sign, self._brush_feedback)

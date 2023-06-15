@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
     QGroupBox,
+    QCheckBox,
     QSlider,
     QVBoxLayout,
     QHBoxLayout,
@@ -20,12 +21,12 @@ from .graphics_view import GraphicsView
 
 class MainWindow(QMainWindow):
     brush_feedback = pyqtSignal(int)  # allows QSlider react on mouse wheel
+    sam_signal = pyqtSignal(bool)  # used to propagate sam mode to all widgets
 
     def __init__(self, workdir: str):
         super(MainWindow, self).__init__()
         self.setWindowTitle("sam_annotator")
         self.resize(1000, 1000)
-        self._sam_mode = True
 
         self._workdir = Path(workdir)
         self._class_dir = self._workdir / "classes.json"
@@ -41,7 +42,17 @@ class MainWindow(QMainWindow):
         self._id2color = {k: v for k, v in zip(ids, colors)}
 
         self.brush_feedback.connect(self.on_brush_size_change)
-        self._graphics_view = GraphicsView(self.brush_feedback, self._sam_mode)
+        self._graphics_view = GraphicsView(self.brush_feedback)
+        self.sam_signal.connect(self._graphics_view.handle_sam_signal)
+
+        # SAM group
+        sam_group = QGroupBox(self.tr("SAM"))
+
+        self.sam_checkbox = QCheckBox("SAM assistance")
+        self.sam_checkbox.stateChanged.connect(self.on_sam_change)
+
+        sam_vlay = QVBoxLayout(sam_group)
+        sam_vlay.addWidget(self.sam_checkbox)
 
         # Dataset group
         ds_group = QGroupBox(self.tr("Dataset"))
@@ -86,6 +97,7 @@ class MainWindow(QMainWindow):
         cs_vlay.addWidget(self.cs_list)
 
         vlay = QVBoxLayout()
+        vlay.addWidget(sam_group)
         vlay.addWidget(ds_group)
         vlay.addWidget(bs_group)
         vlay.addWidget(cs_group)
@@ -99,13 +111,22 @@ class MainWindow(QMainWindow):
         lay.addLayout(vlay, stretch=0)
 
         self._curr_id = 0
-        self._graphics_view._scene.set_brush_color(QColor(colors[0]))
+        self._graphics_view.set_brush_color(QColor(colors[0]))
         self.cs_list.setCurrentRow(0)
+
+    @pyqtSlot(int)
+    def on_sam_change(self, state: int):
+        if state == Qt.CheckState.Checked:
+            self.sam_signal.emit(True)
+        elif state == Qt.CheckState.Unchecked:
+            self.sam_signal.emit(False)
+        else:
+            print("unsupported check state")
 
     @pyqtSlot(int)
     def on_slider_change(self, value: int):
         self.bs_value.setText(f"Size: {value} px")
-        self._graphics_view._scene.set_brush_size(value)
+        self._graphics_view.set_brush_size(value)
 
     @pyqtSlot(int)
     def on_brush_size_change(self, value: int):
@@ -116,22 +137,25 @@ class MainWindow(QMainWindow):
     def on_item_clicked(self, item: QListWidgetItem):
         idx = self.sender().currentRow()
         color = self._id2color[idx]
-        self._graphics_view._scene.set_brush_color(QColor(color))
+        self._graphics_view.set_brush_color(QColor(color))
 
     def save_current_label(self):
         curr_label_path = self._label_dir / f"{self._image_stems[self._curr_id]}.png"
         self._graphics_view.save_label_to(curr_label_path)
 
-    def load_first_sample(self):
-        self._curr_id = 0
+    def _load_sample_by_id(self, id: int):
+        self._curr_id = id
         name = f"{self._image_stems[self._curr_id]}.png"
         image_path = self._image_dir / name
         label_path = self._label_dir / name
-        sam_path = self._sam_dir / name if self._sam_mode else None
+        sam_path = self._sam_dir / name
         self._graphics_view.load_sample(image_path, label_path, sam_path)
         self.ds_label.setText(f"Sample: {name}")
 
-    def switch_sample_by(self, step: int):
+    def load_first_sample(self):
+        self._load_sample_by_id(0)
+
+    def _switch_sample_by(self, step: int):
         if step == 0:
             return
         self.save_current_label()
@@ -139,32 +163,28 @@ class MainWindow(QMainWindow):
         corner_case_id = 0 if step < 0 else max_id
         new_id = self._curr_id + step
         new_id = new_id if new_id in range(max_id + 1) else corner_case_id
-        new_name = f"{self._image_stems[new_id]}.png"
-        self._curr_id = new_id
-        image_path = self._image_dir / new_name
-        label_path = self._label_dir / new_name
-        sam_path = self._sam_dir / new_name
-        self._graphics_view.load_sample(image_path, label_path, sam_path)
-        self.ds_label.setText(f"Sample: {new_name}")
+        self._load_sample_by_id(new_id)
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
         if a0.key() == Qt.Key.Key_Space:
             self._graphics_view.reset_zoom()
+        elif a0.key() == Qt.Key.Key_S:
+            self.sam_checkbox.toggle()
         elif a0.key() == Qt.Key.Key_C:
             self._graphics_view.clear_label()
         elif a0.key() == Qt.Key.Key_E:
             self.cs_list.clearSelection()
-            self._graphics_view._scene.set_brush_eraser(True)
+            self._graphics_view.set_eraser(True)
         elif a0.key() in range(49, 58):
             idx = int(a0.key()) - 49
             color = self._id2color.get(idx)
             if color:
-                self._graphics_view._scene.set_brush_color(QColor(color))
+                self._graphics_view.set_brush_color(QColor(color))
                 self.cs_list.setCurrentRow(idx)
         elif a0.key() == Qt.Key.Key_Comma:
-            self.switch_sample_by(-1)
+            self._switch_sample_by(-1)
         elif a0.key() == Qt.Key.Key_Period:
-            self.switch_sample_by(1)
+            self._switch_sample_by(1)
 
         return super().keyPressEvent(a0)
 

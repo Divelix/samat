@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Tuple
 
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
@@ -10,8 +9,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import pyqtSignal, QPointF
 
 from .brush_cursor import BrushCursor
-from .annotation_layer import LabelLayer
-from .sam_layer import SamVisLayer
+from .label_layer import LabelLayer
+from .sam_layer import SamLayer
 
 import numpy as np
 
@@ -20,22 +19,28 @@ class GraphicsScene(QGraphicsScene):
     label2sam_signal = pyqtSignal(QPointF)
     sam2label_signal = pyqtSignal(np.ndarray)
 
-    def __init__(self, parent, sam_mode=False):
+    def __init__(self, parent):
         super().__init__(parent)
         self._brush_size = 50
         self._brush_step = 5
         self._brush_limits = (1, 150)
+
         self.image_item = QGraphicsPixmapItem()
-        if sam_mode:
-            self.sam_item = SamVisLayer(self.image_item, self.sam2label_signal)
-            self.label2sam_signal.connect(self.sam_item.handle_click)
+        self.sam_item = SamLayer(self.image_item, self.sam2label_signal)
         self.label_item = LabelLayer(self.image_item, self.label2sam_signal)
-        self.sam2label_signal.connect(self.label_item.handle_bundle)
         self.cursor_item = BrushCursor(self.image_item)
+
+        self.label2sam_signal.connect(self.sam_item.handle_click)
+        self.sam2label_signal.connect(self.label_item.handle_bundle)
 
         self.addItem(self.image_item)
 
-    def set_brush_eraser(self, value):
+    def handle_sam_mode(self, is_sam: bool):
+        self.sam_item.handle_sam_mode(is_sam)
+        self.label_item.handle_sam_mode(is_sam)
+        self._sam_mode = is_sam
+
+    def set_eraser(self, value):
         self.label_item.set_eraser(value)
         if value:
             self.cursor_item.set_border_color(QColor(255, 255, 255))

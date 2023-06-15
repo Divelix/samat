@@ -1,16 +1,18 @@
 from PyQt5.QtCore import Qt, QPoint, QPoint, QRectF, QPointF
 from PyQt5.QtWidgets import QGraphicsRectItem
-from PyQt5.QtGui import QPixmap, QPen, QImage
+from PyQt5.QtGui import QPixmap, QPen
 import numpy as np
 
 
-class SamVisLayer(QGraphicsRectItem):
+class SamLayer(QGraphicsRectItem):
     def __init__(self, parent, label_signal):
         super().__init__(parent)
         self.setOpacity(0.5)
         self.setPen(QPen(Qt.PenStyle.NoPen))
+
         self._label_signal = label_signal
         self._pixmap = QPixmap()
+        self._sam_mode = False
 
     def set_image(self, path: str):
         r = self.parentItem().pixmap().rect()
@@ -41,10 +43,14 @@ class SamVisLayer(QGraphicsRectItem):
         painter.restore()
 
     def handle_click(self, pos: QPointF):
+        if not self._sam_mode:
+            return
         x = int(pos.x())
         y = int(pos.y())
         pixel_color = self._img.pixelColor(x, y)
         ids = np.where((self._np_img[:, :, :3] == pixel_color.getRgb()[:3]).all(axis=2))
         pixels = np.column_stack((ids[1], ids[0]))
-        print(f"Pos: ({x}, {y}); color: {pixel_color.name()}; pixels: {pixels.shape}")
         self._label_signal.emit(pixels)
+
+    def handle_sam_mode(self, is_sam: bool):
+        self._sam_mode = is_sam
