@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, Tuple
 
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
@@ -6,20 +7,30 @@ from PyQt5.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsSceneMouseEvent,
 )
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QPointF
 
 from .brush_cursor import BrushCursor
 from .annotation_layer import LabelLayer
+from .sam_layer import SamVisLayer
+
+import numpy as np
 
 
 class GraphicsScene(QGraphicsScene):
-    def __init__(self, parent=None):
+    label2sam_signal = pyqtSignal(QPointF)
+    sam2label_signal = pyqtSignal(np.ndarray)
+
+    def __init__(self, parent, sam_mode=False):
         super().__init__(parent)
         self._brush_size = 50
         self._brush_step = 5
         self._brush_limits = (1, 150)
         self.image_item = QGraphicsPixmapItem()
-        self.label_item = LabelLayer(self.image_item)
+        if sam_mode:
+            self.sam_item = SamVisLayer(self.image_item, self.sam2label_signal)
+            self.label2sam_signal.connect(self.sam_item.handle_click)
+        self.label_item = LabelLayer(self.image_item, self.label2sam_signal)
+        self.sam2label_signal.connect(self.label_item.handle_bundle)
         self.cursor_item = BrushCursor(self.image_item)
 
         self.addItem(self.image_item)

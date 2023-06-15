@@ -25,10 +25,13 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.setWindowTitle("sam_annotator")
         self.resize(1000, 1000)
+        self._sam_mode = True
+
         self._workdir = Path(workdir)
         self._class_dir = self._workdir / "classes.json"
         self._image_dir = self._workdir / "images"
         self._label_dir = self._workdir / "labels"
+        self._sam_dir = self._workdir / "sam"
         self._label_dir.mkdir(exist_ok=True)
         self._image_stems = [path.stem for path in sorted(self._image_dir.iterdir())]
         with open(self._class_dir, "r") as f:
@@ -36,8 +39,9 @@ class MainWindow(QMainWindow):
         ids = [c["id"] for c in self._classes]
         colors = [c["color"] for c in self._classes]
         self._id2color = {k: v for k, v in zip(ids, colors)}
+
         self.brush_feedback.connect(self.on_brush_size_change)
-        self._graphics_view = GraphicsView(self.brush_feedback)
+        self._graphics_view = GraphicsView(self.brush_feedback, self._sam_mode)
 
         # Dataset group
         ds_group = QGroupBox(self.tr("Dataset"))
@@ -123,7 +127,8 @@ class MainWindow(QMainWindow):
         name = f"{self._image_stems[self._curr_id]}.png"
         image_path = self._image_dir / name
         label_path = self._label_dir / name
-        self._graphics_view.load_sample(image_path, label_path)
+        sam_path = self._sam_dir / name if self._sam_mode else None
+        self._graphics_view.load_sample(image_path, label_path, sam_path)
         self.ds_label.setText(f"Sample: {name}")
 
     def switch_sample_by(self, step: int):
@@ -138,7 +143,8 @@ class MainWindow(QMainWindow):
         self._curr_id = new_id
         image_path = self._image_dir / new_name
         label_path = self._label_dir / new_name
-        self._graphics_view.load_sample(image_path, label_path)
+        sam_path = self._sam_dir / new_name
+        self._graphics_view.load_sample(image_path, label_path, sam_path)
         self.ds_label.setText(f"Sample: {new_name}")
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:

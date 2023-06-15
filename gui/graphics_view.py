@@ -22,9 +22,9 @@ from .graphics_scene import GraphicsScene
 
 
 class GraphicsView(QGraphicsView):
-    def __init__(self, brush_feedback, parent=None):
+    def __init__(self, brush_feedback, sam_mode=False, parent=None):
         super().__init__(parent)
-        self._scene = GraphicsScene(self)
+        self._scene = GraphicsScene(self, sam_mode)
         self._pan_mode = False
         self._last_pos = QPoint()
         self.brush_feedback = brush_feedback
@@ -49,7 +49,7 @@ class GraphicsView(QGraphicsView):
     def save_label_to(self, path: Path):
         self._scene.save_label(path)
 
-    def load_sample(self, image_path: Path, label_path: Path):
+    def load_sample(self, image_path: Path, label_path: Path, sam_path: Path | None):
         image = QPixmap(str(image_path))
         self._scene.setSceneRect(QRectF(QPointF(), QSizeF(image.size())))
         self._scene.image_item.setPixmap(QPixmap(str(image_path)))
@@ -57,6 +57,9 @@ class GraphicsView(QGraphicsView):
             self._scene.label_item.set_image(str(label_path))
         else:
             self._scene.label_item.clear()
+        if sam_path:
+            assert sam_path.exists(), "SAM image not found"
+            self._scene.sam_item.set_image(str(sam_path))
         self.fitInView(self._scene.image_item, Qt.AspectRatioMode.KeepAspectRatio)
         self.centerOn(self._scene.image_item)
 
@@ -85,6 +88,7 @@ class GraphicsView(QGraphicsView):
         if event.button() == Qt.MouseButton.RightButton:
             self._pan_mode = False
             self.setCursor(Qt.CursorShape.BlankCursor)
+        super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         forward = event.angleDelta().y() > 0
