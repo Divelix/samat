@@ -1,0 +1,6 @@
+run_style_check:
+  image: python:latest
+  before_script:
+    - pip install black
+  script:
+    - black .

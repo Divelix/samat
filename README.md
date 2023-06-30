@@ -50,11 +50,12 @@ Example `classes.json`:
 ```json
 {
     "classes": [
-        { "id": 0, "name": "human", "color": "#0000ff" },
-        { "id": 1, "name": "car", "color": "#fff200" },
+        { "id": 1, "name": "human", "color": "#FF0000" },
+        { "id": 2, "name": "car", "color": "#00FF00" },
     ]
 }
 ```
+**Note:** `id` field must coinside with number keys on keyboard, so start with 1 (but not 0).
 **Note:** write path to your `my_dataset` (or any other name) inside `main.py`.
 
 ## Shortcuts

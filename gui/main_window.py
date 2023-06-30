@@ -176,7 +176,7 @@ class MainWindow(QMainWindow):
 
     def on_item_clicked(self, item: QListWidgetItem):
         idx = self.sender().currentRow()
-        color = self._id2color[idx]
+        color = self._id2color[idx + 1]
         self._graphics_view.set_brush_color(QColor(color))
 
     def save_current_label(self):
@@ -216,11 +216,11 @@ class MainWindow(QMainWindow):
             self.cs_list.clearSelection()
             self._graphics_view.set_eraser(True)
         elif a0.key() in range(49, 58):
-            idx = int(a0.key()) - 49
-            color = self._id2color.get(idx)
+            num_key = int(a0.key()) - 48
+            color = self._id2color.get(num_key)
             if color:
                 self._graphics_view.set_brush_color(QColor(color))
-                self.cs_list.setCurrentRow(idx)
+                self.cs_list.setCurrentRow(num_key - 1)
         elif a0.key() == Qt.Key.Key_Comma:
             self._switch_sample_by(-1)
         elif a0.key() == Qt.Key.Key_Period:
