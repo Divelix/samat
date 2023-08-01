@@ -50,6 +50,9 @@ class SamLayer(QGraphicsRectItem):
         x = int(pos.x())
         y = int(pos.y())
         pixel_color = self._img.pixelColor(x, y)
+        print(f"pixel_color: ({pixel_color.red()}, {pixel_color.green()}, {pixel_color.blue()})")
+        if pixel_color.red() == pixel_color.green() == pixel_color.blue() == 0:
+            return
         ids = np.where((self._np_img[:, :, :3] == pixel_color.getRgb()[:3]).all(axis=2))
         pixels = np.column_stack((ids[1], ids[0]))
         self._label_signal.emit(pixels)

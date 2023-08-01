@@ -19,18 +19,14 @@ def make_annotator() -> SamAutomaticMaskGenerator:
     sam.to(device)
     end_move = time.perf_counter()
     mask_generator = SamAutomaticMaskGenerator(sam)
-    print(
-        f"Load weights: {(end_load-start):.3f}s\nMove to {device}: {(end_move-end_load):.3f}s"
-    )
+    print(f"Load weights: {(end_load-start):.3f}s\nMove to {device}: {(end_move-end_load):.3f}s")
     return mask_generator
 
 
 if __name__ == "__main__":
-    data_path = Path("/hdd_ext4/datasets/images/raw_2")
+    data_path = Path("/hdd_ext4/datasets/images/webcam")
     images_path = data_path / "images"
-    # fmt: off
     assert images_path.exists(), "Data path must contain 'images' folder with all source data images"
-    # fmt: on
     sam_path = data_path / "sam"
     sam_path.mkdir(exist_ok=True)
     sam = make_annotator()

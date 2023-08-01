@@ -193,7 +193,8 @@ class MainWindow(QMainWindow):
         self.ds_label.setText(f"Sample: {name}")
 
     def load_first_sample(self):
-        self._load_sample_by_id(0)
+        labels = list(self._label_dir.iterdir())
+        self._load_sample_by_id(len(labels))
 
     def _switch_sample_by(self, step: int):
         if step == 0:
