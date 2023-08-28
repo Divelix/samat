@@ -192,9 +192,13 @@ class MainWindow(QMainWindow):
         self._graphics_view.load_sample(image_path, label_path, sam_path)
         self.ds_label.setText(f"Sample: {name}")
 
-    def load_first_sample(self):
+    def load_latest_sample(self):
         labels = list(self._label_dir.iterdir())
-        self._load_sample_by_id(len(labels))
+        images = list(self._image_dir.iterdir())
+        if len(labels) < len(images):
+            self._load_sample_by_id(len(labels))
+        else:
+            self._load_sample_by_id(0)
 
     def _switch_sample_by(self, step: int):
         if step == 0:

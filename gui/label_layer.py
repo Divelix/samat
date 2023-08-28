@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt5.QtCore import Qt, QPoint, QLineF, QPoint, QRectF
+from PyQt5.QtCore import Qt, QLineF, QPoint, QRectF
 from PyQt5.QtWidgets import QGraphicsSceneMouseEvent, QGraphicsRectItem
 from PyQt5.QtGui import QColor, QPixmap, QPainter, QPen
 import numpy as np

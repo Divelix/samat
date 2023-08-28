@@ -1,6 +1,14 @@
-run_style_check:
+style_check:
   image: python:latest
+  tags: [python]
+  allow_failure: false
   before_script:
-    - pip install black
+    - pip install black flake8
+    - CHANGED_FILES=$(git diff --diff-filter=ACM --name-only origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME} | grep '\.py'$)
+    - echo "Python version $(python -V)"
+    - echo "Files to check $CHANGED_FILES"
   script:
-    - black .
+    - black --check --diff $CHANGED_FILES
+    - flake8 $CHANGED_FILES --ignore=E501
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'

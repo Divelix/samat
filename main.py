@@ -8,5 +8,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     mw = MainWindow("/hdd_ext4/datasets/images/webcam")
     mw.show()
-    mw.load_first_sample()
+    mw.load_latest_sample()
     sys.exit(app.exec_())

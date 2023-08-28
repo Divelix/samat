@@ -1,4 +1,7 @@
-# Predict segmentation masks (and save as 8-bit grayscale .PNG) for all images in given dataset via SAM model
+""" Predicts segmentation masks via SAM model
+for all images in given dataset.
+Saves mask as 8-bit grayscale .PNG
+"""
 from pathlib import Path
 import time
 from PIL import Image
@@ -13,20 +16,22 @@ def make_annotator() -> SamAutomaticMaskGenerator:
     checkpoint_path = "/hdd_ext4/checkpoints/sam/sam_vit_h_4b8939.pth"
     device = "cuda"
     print(f"Loading {model_type} on {device} device")
-    start = time.perf_counter()
+    t1 = time.perf_counter()
     sam = sam_model_registry[model_type](checkpoint_path)
-    end_load = time.perf_counter()
+    t2 = time.perf_counter()
     sam.to(device)
-    end_move = time.perf_counter()
+    t3 = time.perf_counter()
     mask_generator = SamAutomaticMaskGenerator(sam)
-    print(f"Load weights: {(end_load-start):.3f}s\nMove to {device}: {(end_move-end_load):.3f}s")
+    print(f"Load weights: {(t2-t1):.3f}s\nMove to {device}: {(t3-t2):.3f}s")
     return mask_generator
 
 
 if __name__ == "__main__":
-    data_path = Path("/hdd_ext4/datasets/images/webcam")
+    data_path = Path("/hdd_ext4/datasets/images/webcam_sunny")
     images_path = data_path / "images"
-    assert images_path.exists(), "Data path must contain 'images' folder with all source data images"
+    assert (
+        images_path.exists()
+    ), "Data path must contain 'images' folder with all source data images"
     sam_path = data_path / "sam"
     sam_path.mkdir(exist_ok=True)
     sam = make_annotator()

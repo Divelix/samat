@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QPoint, QPoint, QRectF, QPointF
+from PyQt5.QtCore import Qt, QPoint, QRectF, QPointF
 from PyQt5.QtWidgets import QGraphicsRectItem
 from PyQt5.QtGui import QPixmap, QPen
 import numpy as np
@@ -49,11 +49,11 @@ class SamLayer(QGraphicsRectItem):
             return
         x = int(pos.x())
         y = int(pos.y())
-        pixel_color = self._img.pixelColor(x, y)
-        print(f"pixel_color: ({pixel_color.red()}, {pixel_color.green()}, {pixel_color.blue()})")
-        if pixel_color.red() == pixel_color.green() == pixel_color.blue() == 0:
+        pc = self._img.pixelColor(x, y)
+        print(f"pixel_color: ({pc.red()}, {pc.green()}, {pc.blue()})")
+        if pc.red() == pc.green() == pc.blue() == 0:
             return
-        ids = np.where((self._np_img[:, :, :3] == pixel_color.getRgb()[:3]).all(axis=2))
+        ids = np.where((self._np_img[:, :, :3] == pc.getRgb()[:3]).all(axis=2))
         pixels = np.column_stack((ids[1], ids[0]))
         self._label_signal.emit(pixels)
 
