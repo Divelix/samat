@@ -5,19 +5,19 @@ Saves mask as 8-bit grayscale .PNG
 from pathlib import Path
 import time
 from PIL import Image
+import tomllib
 
 import numpy as np
 from tqdm import tqdm
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 
-def make_annotator() -> SamAutomaticMaskGenerator:
+def make_annotator(weights_path: str) -> SamAutomaticMaskGenerator:
     model_type = "vit_h"
-    checkpoint_path = "/hdd_ext4/checkpoints/sam/sam_vit_h_4b8939.pth"
     device = "cuda"
     print(f"Loading {model_type} on {device} device")
     t1 = time.perf_counter()
-    sam = sam_model_registry[model_type](checkpoint_path)
+    sam = sam_model_registry[model_type](sam_path)
     t2 = time.perf_counter()
     sam.to(device)
     t3 = time.perf_counter()
@@ -27,14 +27,16 @@ def make_annotator() -> SamAutomaticMaskGenerator:
 
 
 if __name__ == "__main__":
-    data_path = Path("/hdd_ext4/datasets/images/webcam_sunny")
+    with open("config.toml", "rb") as f:
+        config = tomllib.load(f)
+    data_path = Path(config["paths"]["data"])
     images_path = data_path / "images"
     assert (
         images_path.exists()
     ), "Data path must contain 'images' folder with all source data images"
     sam_path = data_path / "sam"
     sam_path.mkdir(exist_ok=True)
-    sam = make_annotator()
+    sam = make_annotator(config["paths"]["sam_weights"])
 
     max_masks = 0
 

@@ -6,14 +6,18 @@ SAMAT is a hackable PyQt5 based GUI labelling tool for semantic segmentation tas
 # Workflow
 - (optional) Generate SAM masks from images via given script
 - Organize yor data following [this](#dataset-folder-structure) structure
-- Run GUI via `main.py` (prerequisites should be satisfied)
+- Run GUI via `__main__.py` ([prerequisites](#prerequisites) should be satisfied)
 - Annotate using brush (label is saved on sample switch)
 # Getting started
 ## Prerequisites
-Annotation tool itself require only `Python 3.11`, `PyQt5` and `numpy`.
+Annotation tool itself requires only:
+- `Python 3.11`
+- `PyQt5`
+- `numpy`
+
 Example setup (Ubuntu):
 ```bash
-git clone git@github.com:Divelix/samat.git
+git clone https://github.com/Divelix/samat.git
 cd samat
 sudo apt update
 sudo apt install python3.11-venv
@@ -24,7 +28,9 @@ python -m pip install -e .
 python .
 ```
 
-(optional) If you want to prepare masks for further use of SAM assistance option inside annotation tool, you need PyTorch to run SAM model inference.
+(optional) In order to generate SAM masks for Magic Wand, you will need to install:
+- `PyTorch` to run SAM model inference
+- `segment-anything` itself + related libs
 
 Example setup (assuming Miniconda/Anaconda installed):
 ```bash
@@ -89,4 +95,4 @@ where:
 |                `Space`                | Reset zoom                                           |
 |                  `C`                  | Clear label                                          |
 |                  `S`                  | Switch SAM assistance mode on/off                    |
-|               `,`/`.`                 | Previous/Next sample                             |
+|               `,`/`.`                 | Previous/Next sample                                 |
