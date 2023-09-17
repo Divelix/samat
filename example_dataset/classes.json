@@ -1,0 +1,11 @@
+{
+    "classes": [
+        { "id": 1, "name": "road", "color": "#FF0000" },
+        { "id": 2, "name": "sidewalk", "color": "#00FF00" },
+        { "id": 3, "name": "human", "color": "#0000FF" },
+        { "id": 4, "name": "car", "color": "#FFFF00" },
+        { "id": 5, "name": "building", "color": "#FF00FF" },
+        { "id": 6, "name": "vegetation", "color": "#00FFFF" },
+        { "id": 7, "name": "obstacle", "color": "#FF8000" }
+    ]
+}

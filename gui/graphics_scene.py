@@ -57,7 +57,7 @@ class GraphicsScene(QGraphicsScene):
 
     def change_brush_size(self, sign: int, bf: pyqtSignal):
         # fmt: off
-        assert sign in (-1, 1), f"Sign value must be either 1 or -1, but {sign} was given"
+        assert sign in (-1, 1), f"Sign value must be either 1 or -1, but {sign} was given"  # noqa: E501
         # fmt: on
         new_size = self._brush_size + (self._brush_step * sign)
         new_size = max(new_size, self._brush_limits[0])

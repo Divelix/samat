@@ -1,5 +1,4 @@
 .vscode
 __pycache__
 *.pyc
-*.png
-*.jpg
+example_dataset/labels
