@@ -1,3 +1,5 @@
+device = "cuda" # or "cpu"
+
 [paths]
-data = "example_dataset" # enter path to your dataset here
+data = "example_dataset"                      # enter path to your dataset here
 sam_weights = "/your/path/to/sam_weights.pth"
