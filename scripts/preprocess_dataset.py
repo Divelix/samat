@@ -1,7 +1,9 @@
-""" Predicts segmentation masks via SAM model
+"""
+Predicts segmentation masks via SAM model
 for all images in given dataset.
 Saves mask as 8-bit grayscale .PNG
 """
+
 from pathlib import Path
 import time
 from PIL import Image
@@ -12,12 +14,11 @@ from tqdm import tqdm
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 
-def make_annotator(weights_path: str) -> SamAutomaticMaskGenerator:
+def make_annotator(weights_path: str, device: str) -> SamAutomaticMaskGenerator:
     model_type = "vit_h"
-    device = "cuda"
     print(f"Loading {model_type} on {device} device")
     t1 = time.perf_counter()
-    sam = sam_model_registry[model_type](sam_path)
+    sam = sam_model_registry[model_type](weights_path)
     t2 = time.perf_counter()
     sam.to(device)
     t3 = time.perf_counter()
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     ), "Data path must contain 'images' folder with all source data images"
     sam_path = data_path / "sam"
     sam_path.mkdir(exist_ok=True)
-    sam = make_annotator(config["paths"]["sam_weights"])
+    sam = make_annotator(config["paths"]["sam_weights"], config["device"])
 
     max_masks = 0
 
